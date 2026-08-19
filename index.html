@@ -428,6 +428,10 @@
       if (storeLayout[oldName] !== undefined && currentUser && currentStore) {
         const orderVal = storeLayout[oldName];
 
+        // עדכון אובייקט הזיכרון המקומי באופן מיידי כדי למנוע את קפיצת המוצר לסוף הרשימה
+        storeLayout[newName] = orderVal;
+        delete storeLayout[oldName];
+
         await setDoc(
           doc(db, "users", currentUser.uid, "stores", currentStore, "layout", newName), 
           { order: orderVal }
