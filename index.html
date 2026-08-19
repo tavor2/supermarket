@@ -65,8 +65,8 @@
     .delete-btn { color: #888; }
 
     .toggle-btn { background: none; color: var(--primary); border: none; text-decoration: underline; padding: 0; margin-bottom: 10px; cursor: pointer; text-align: right; width: auto; font-size: 14px; }
-    .add-store-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
-    .add-store-box.active { display: block; }
+    .collapsible-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .collapsible-box.active { display: block; }
 
     .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 15px; cursor: pointer; font-weight: bold; }
     .clear-btn:hover { background-color: #ffebee; }
@@ -74,14 +74,14 @@
 
     /* חלונות מודאליים */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
     .modal-box h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--text); }
     .modal-actions { display: flex; gap: 8px; margin-top: 15px; }
     .modal-actions button { flex: 1; padding: 10px; font-weight: bold; cursor: pointer; }
     .btn-cancel { background: #e0e0e0; border: none; border-radius: 8px; color: #333; }
 
     .cat-order-list { list-style: none; padding: 0; margin: 10px 0; }
-    .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; cursor: move; }
+    .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -109,10 +109,10 @@
     </div>
 
     <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
-    <div class="add-store-box" id="storeForm">
+    <div class="collapsible-box" id="storeForm">
       <div class="input-group">
         <input type="text" id="newStoreInput" placeholder="שם הסניף...">
-        <button id="addStoreBtn" class="btn-primary">שמור</button>
+        <button id="addStoreBtn" class="btn-primary">שמור סניף</button>
       </div>
     </div>
 
@@ -125,8 +125,15 @@
       </div>
     </div>
 
+    <button type="button" class="toggle-btn" id="toggleCategoryForm">+ הוסף קטגוריה חדשה</button>
+    <div class="collapsible-box" id="categoryForm">
+      <div class="input-group">
+        <input type="text" id="newCategoryInput" placeholder="שם הקטגוריה...">
+        <button id="addCategoryBtn" class="btn-primary">שמור</button>
+      </div>
+    </div>
+
     <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר (קטגוריות)</button>
-    <button id="loadLastListBtn" class="btn-info">🔄 טען מוצרים מקנייה אחרונה</button>
 
     <div id="shoppingListContainer"></div>
 
@@ -157,7 +164,7 @@
 <div id="catOrderModal" class="modal-overlay hidden">
   <div class="modal-box">
     <h3>סדר הקטגוריות בסופר</h3>
-    <p style="font-size: 13px; color: #666;">גרור או השתמש בחיצים כדי לסדר את המסלול בסופר:</p>
+    <p style="font-size: 13px; color: #666;">השתמש בחיצים כדי לסדר את המסלול בסופר הנוכחי:</p>
     <ul id="catOrderList" class="cat-order-list"></ul>
     <div class="modal-actions">
       <button id="catOrderSaveBtn" class="btn-primary">שמור סדר</button>
@@ -191,19 +198,24 @@
   const googleProvider = new GoogleAuthProvider();
 
   const defaultCategories = [
-    "חומרי כביסה וניקוי",
-    "דברי מאפה",
-    "קפואים",
     "ירקות ופירות",
     "מוצרי גבינה וחלב",
+    "דברי מאפה",
+    "שימורים",
+    "מזווה, בישול ואפייה",
+    "חטיפים ומתוקים",
+    "קפואים",
+    "חומרי כביסה וניקוי",
     "כללי"
   ];
 
   let currentUser = null;
   let currentStore = "";
+  let allCategories = [...defaultCategories];
   let categoryOrder = [...defaultCategories];
   let currentItems = [];
   let unsubscribeShoppingList = null;
+  let unsubscribeCategories = null;
   let activeEditingItem = null;
 
   // DOM elements
@@ -218,13 +230,17 @@
   const storeForm = document.getElementById('storeForm');
   const newStoreInput = document.getElementById('newStoreInput');
   const addStoreBtn = document.getElementById('addStoreBtn');
+
+  const toggleCategoryForm = document.getElementById('toggleCategoryForm');
+  const categoryForm = document.getElementById('categoryForm');
+  const newCategoryInput = document.getElementById('newCategoryInput');
+  const addCategoryBtn = document.getElementById('addCategoryBtn');
   
   const itemInput = document.getElementById('itemInput');
   const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
-  const loadLastListBtn = document.getElementById('loadLastListBtn');
 
   const editModal = document.getElementById('editModal');
   const editModalInput = document.getElementById('editModalInput');
@@ -247,24 +263,53 @@
       userNameDisplay.textContent = user.displayName || user.email;
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
-      populateCategoryDropdowns();
+      listenToGlobalCategories();
       loadStores();
     } else {
       currentUser = null;
       if (unsubscribeShoppingList) unsubscribeShoppingList();
+      if (unsubscribeCategories) unsubscribeCategories();
       appSection.classList.add('hidden');
       loginSection.classList.remove('hidden');
     }
   });
 
+  // האזנה לקטגוריות מהבסיס נתונים
+  function listenToGlobalCategories() {
+    const catQuery = collection(db, "globalCategories");
+    unsubscribeCategories = onSnapshot(catQuery, (snapshot) => {
+      const customCats = [];
+      snapshot.forEach(docSnap => customCats.push(docSnap.data().name));
+      
+      // איחוד קטגוריות ברירת מחדל + קטגוריות מותאמות אישית
+      allCategories = Array.from(new Set([...defaultCategories, ...customCats]));
+      populateCategoryDropdowns();
+    });
+  }
+
   function populateCategoryDropdowns() {
     itemCategorySelect.innerHTML = '';
     editModalCategorySelect.innerHTML = '';
-    defaultCategories.forEach(cat => {
+    allCategories.forEach(cat => {
       itemCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
       editModalCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
   }
+
+  // הוספת קטגוריה חדשה
+  toggleCategoryForm.addEventListener('click', () => categoryForm.classList.toggle('active'));
+  
+  addCategoryBtn.addEventListener('click', async () => {
+    const catName = newCategoryInput.value.trim();
+    if (!catName) return;
+
+    if (!allCategories.includes(catName)) {
+      await addDoc(collection(db, "globalCategories"), { name: catName });
+    }
+
+    newCategoryInput.value = '';
+    categoryForm.classList.remove('active');
+  });
 
   async function loadStores() {
     const storesRef = collection(db, "storeList");
@@ -315,10 +360,14 @@
   async function loadCategoryOrder() {
     if (!currentStore || !currentUser) return;
     const orderDoc = await getDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "config", "categoryOrder"));
+    
     if (orderDoc.exists() && orderDoc.data().order) {
-      categoryOrder = orderDoc.data().order;
+      const savedOrder = orderDoc.data().order;
+      // שילוב קטגוריות חדשות שנוספו מאוחר יותר לסוף הרשימה
+      const missing = allCategories.filter(c => !savedOrder.includes(c));
+      categoryOrder = [...savedOrder, ...missing];
     } else {
-      categoryOrder = [...defaultCategories];
+      categoryOrder = [...allCategories];
     }
   }
 
@@ -339,7 +388,6 @@
   function renderListByCategories() {
     shoppingListContainer.innerHTML = '';
 
-    // הקבצה לפי קטגוריה
     const grouped = {};
     currentItems.forEach(item => {
       const cat = item.category || "כללי";
@@ -347,7 +395,6 @@
       grouped[cat].push(item);
     });
 
-    // הצגה לפי סדר הקטגוריות המוגדר לסניף
     categoryOrder.forEach(cat => {
       if (grouped[cat] && grouped[cat].length > 0) {
         const catHeader = document.createElement('div');
@@ -485,3 +532,4 @@
 
 </body>
 </html>
+
