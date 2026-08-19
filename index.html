@@ -196,32 +196,36 @@
   });
 
   async function loadStores() {
-    const storesRef = collection(db, "storeList");
-    const snapshot = await getDocs(storesRef);
-    let stores = [];
+    try {
+      const storesRef = collection(db, "storeList");
+      const snapshot = await getDocs(storesRef);
+      let stores = [];
 
-    if (snapshot.empty) {
-      for (const s of defaultStores) {
-        await setDoc(doc(db, "storeList", s.id), { name: s.name });
-        stores.push(s);
+      if (snapshot.empty) {
+        for (const s of defaultStores) {
+          await setDoc(doc(db, "storeList", s.id), { name: s.name });
+          stores.push(s);
+        }
+      } else {
+        snapshot.forEach(docSnap => {
+          stores.push({ id: docSnap.id, name: docSnap.data().name });
+        });
       }
-    } else {
-      snapshot.forEach(docSnap => {
-        stores.push({ id: docSnap.id, name: docSnap.data().name });
+
+      storeSelect.innerHTML = '';
+      stores.forEach((store, index) => {
+        const option = document.createElement('option');
+        option.value = store.id;
+        option.textContent = store.name;
+        if (index === 0) option.selected = true;
+        storeSelect.appendChild(option);
       });
+
+      currentStore = storeSelect.value;
+      listenToShoppingList();
+    } catch (error) {
+      console.error("שגיאה שטעינת הסניפים (בדוק Firebase Rules):", error);
     }
-
-    storeSelect.innerHTML = '';
-    stores.forEach((store, index) => {
-      const option = document.createElement('option');
-      option.value = store.id;
-      option.textContent = store.name;
-      if (index === 0) option.selected = true;
-      storeSelect.appendChild(option);
-    });
-
-    currentStore = storeSelect.value;
-    listenToShoppingList();
   }
 
   toggleStoreForm.addEventListener('click', () => {
@@ -325,7 +329,6 @@
 
     if (isChecked && storeLayout[itemName] === undefined) {
       const nextOrder = Object.keys(storeLayout).length + 1;
-      await setDoc(doc(db, "families", currentUser.uid, "stores", currentStore, "layout", itemName), { order: nextOrder });
       await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemName), { order: nextOrder });
       storeLayout[itemName] = nextOrder;
     }
