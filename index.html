@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; }
+    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; --info: #0288d1; }
     body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
     .app-container { width: 100%; max-width: 480px; background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 15px; }
@@ -43,6 +43,7 @@
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
     button.btn-primary { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    button.btn-info { background-color: var(--info); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     .input-group { display: flex; gap: 8px; }
     .input-group input { flex: 1; }
     .input-group button { width: auto; margin-top: 0; white-space: nowrap; }
@@ -89,7 +90,7 @@
     .add-store-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
     .add-store-box.active { display: block; }
 
-    .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; }
+    .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 15px; cursor: pointer; font-weight: bold; }
     .clear-btn:hover { background-color: #ffebee; }
     .hidden { display: none !important; }
   </style>
@@ -134,6 +135,8 @@
       </div>
     </div>
 
+    <button id="loadLastListBtn" class="btn-info">🔄 טען מוצרים מקנייה אחרונה</button>
+
     <ul id="shoppingList"></ul>
 
     <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מוצרים שנסמנו)</button>
@@ -146,7 +149,7 @@
     getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { 
-    getFirestore, collection, addDoc, getDocs, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot 
+    getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -184,6 +187,7 @@
   const addStoreBtn = document.getElementById('addStoreBtn');
   const itemInput = document.getElementById('itemInput');
   const addBtn = document.getElementById('addBtn');
+  const loadLastListBtn = document.getElementById('loadLastListBtn');
   const shoppingList = document.getElementById('shoppingList');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
 
@@ -424,6 +428,7 @@
     await deleteDoc(doc(db, "activeList", id));
   }
 
+  // שמירת הרשימה לקנייה אחרונה לפני מחיקתה
   clearCompletedBtn.addEventListener('click', async () => {
     const completedItems = currentItems.filter(item => item.completed);
     if (completedItems.length === 0) {
@@ -431,10 +436,59 @@
       return;
     }
 
-    if (confirm(`האם למחוק ${completedItems.length} מוצרים שנסמנו?`)) {
+    if (confirm(`האם לסיים קנייה ולמחוק ${completedItems.length} מוצרים שנסמנו?`)) {
+      // שמירת הרשימה האחרונה במסד הנתונים תחת המשתמש והסניף
+      const historyDocRef = doc(db, "users", currentUser.uid, "stores", currentStore, "history", "lastList");
+      const itemsToSave = completedItems.map(item => item.name);
+      
+      await setDoc(historyDocRef, { items: itemsToSave, updatedAt: new Date() });
+
+      // מחיקת המוצרים המסומנים מהרשימה הפעילה
       for (const item of completedItems) {
         await deleteDoc(doc(db, "activeList", item.id));
       }
+
+      alert("הקנייה הסתיימה! המוצרים נשמרו כתבנית לקנייה הבאה.");
+    }
+  });
+
+  // טעינת הקנייה האחרונה בחזרה לרשימה הפעילה
+  loadLastListBtn.addEventListener('click', async () => {
+    if (!currentUser || !currentStore) return;
+
+    try {
+      const historyDocRef = doc(db, "users", currentUser.uid, "stores", currentStore, "history", "lastList");
+      const docSnap = await getDoc(historyDocRef);
+
+      if (!docSnap.exists() || !docSnap.data().items || docSnap.data().items.length === 0) {
+        alert("לא נמצאה קנייה קודמת שמורה עבור סניף זה.");
+        return;
+      }
+
+      const lastItems = docSnap.data().items;
+
+      // סינון מוצרים שכבר קיימים ברשימה הפעילה (כדי למנוע כפילויות)
+      const existingNames = currentItems.map(item => item.name);
+      const itemsToAdd = lastItems.filter(name => !existingNames.includes(name));
+
+      if (itemsToAdd.length === 0) {
+        alert("כל המוצרים מהקנייה האחרונה כבר קיימים ברשימה.");
+        return;
+      }
+
+      // הוספת המוצרים לרשימה הפעילה
+      for (const itemName of itemsToAdd) {
+        await addDoc(collection(db, "activeList"), {
+          name: itemName,
+          completed: false,
+          userId: currentUser.uid
+        });
+      }
+
+      alert(`נוספו ${itemsToAdd.length} מוצרים מהקנייה האחרונה!`);
+    } catch (error) {
+      console.error("שגיאה בטעינת הקנייה האחרונה:", error);
+      alert("התרחשה שגיאה בטעינת המוצרים.");
     }
   });
 
