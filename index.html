@@ -2,15 +2,22 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>סופר-סדר | רשימת קניות חכמה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2e7d32">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="רשימת קניות">
+  <title>רשימת קניות | רשימת קניות חכמה</title>
+
+  <!-- קישור לקובץ ה-Manifest -->
+  <link rel="manifest" href="manifest.json">
+
   <style>
     :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; }
     body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
     .app-container { width: 100%; max-width: 480px; background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 15px; }
     
-    /* מסך התחברות */
     .auth-box { text-align: center; padding: 20px 0; }
     .google-btn {
       background-color: #ffffff;
@@ -29,7 +36,6 @@
     }
     .google-btn:hover { background-color: #f8f8f8; }
 
-    /* בר משתמש מחובר */
     .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
     .user-badge button { background: none; border: none; color: var(--danger); text-decoration: underline; cursor: pointer; padding: 0; width: auto; font-size: 12px; }
 
@@ -40,21 +46,43 @@
     .input-group { display: flex; gap: 8px; }
     .input-group input { flex: 1; }
     .input-group button { width: auto; margin-top: 0; white-space: nowrap; }
-    .add-options-group { display: flex; gap: 8px; margin-bottom: 8px; }
-    .add-options-group select { flex: 1; font-size: 14px; padding: 8px; }
     
     ul { list-style: none; padding: 0; margin-top: 20px; }
-    li { background: #f9f9f9; border: 1px solid #eee; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    li { 
+      background: #f9f9f9; 
+      border: 1px solid #eee; 
+      padding: 12px 14px; 
+      border-radius: 8px; 
+      margin-bottom: 8px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      touch-action: none;
+      user-select: none;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    li.dragging {
+      opacity: 0.6;
+      background: #e8f5e9;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
     li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
     .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
     .info-tag { font-size: 11px; background: #e0e0e0; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
     
     .item-right { display: flex; align-items: center; }
-    .item-left { display: flex; align-items: center; gap: 4px; }
+    .item-left { display: flex; align-items: center; gap: 6px; }
     
-    .order-btn { background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; font-size: 12px; cursor: pointer; width: auto; }
-    .order-btn:hover { background: #ddd; }
-    .delete-btn { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; margin: 0 0 0 6px; width: auto; }
+    .drag-handle { 
+      cursor: grab; 
+      color: #aaa; 
+      font-size: 18px; 
+      padding: 0 4px; 
+      margin-left: 6px;
+    }
+    .drag-handle:active { cursor: grabbing; }
+
+    .delete-btn { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
     .delete-btn:hover { color: var(--danger); }
 
     .toggle-btn { background: none; color: var(--primary); border: none; text-decoration: underline; padding: 0; margin-bottom: 10px; cursor: pointer; text-align: right; width: auto; font-size: 14px; }
@@ -69,9 +97,8 @@
 <body>
 
 <div class="app-container">
-  <h1>🛒 סופר-סדר</h1>
+  <h1>🛒 רשימת קניות</h1>
 
-  <!-- מסך התחברות -->
   <div id="loginSection" class="auth-box">
     <p>התחבר כדי לשמור ולסנכרן את רשימת הקניות שלך בכל המכשירים</p>
     <button id="googleLoginBtn" class="google-btn">
@@ -80,20 +107,17 @@
     </button>
   </div>
 
-  <!-- תוכן האפליקציה (מוסתר עד להתחברות) -->
   <div id="appSection" class="hidden">
     <div class="user-badge">
       <span>מחובר כ: <strong id="userNameDisplay"></strong></span>
       <button id="logoutBtn">התנתק</button>
     </div>
 
-    <!-- בחירת סניף -->
     <div class="field">
       <label for="storeSelect">בחר סניף סופר:</label>
       <select id="storeSelect"></select>
     </div>
 
-    <!-- טופס הוספת סניף חדש -->
     <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
     <div class="add-store-box" id="storeForm">
       <div class="input-group">
@@ -102,15 +126,8 @@
       </div>
     </div>
 
-    <!-- הוספת מוצר -->
     <div class="field">
       <label for="itemInput">הוסף מוצר לרשימה:</label>
-      <div class="add-options-group">
-        <select id="insertPositionSelect">
-          <option value="end">הוסף בסוף הרשימה</option>
-          <option value="start">הוסף בראש הרשימה</option>
-        </select>
-      </div>
       <div class="input-group">
         <input type="text" id="itemInput" placeholder="למשל: חלב, עגבניות...">
         <button id="addBtn" class="btn-primary">הוסף</button>
@@ -147,7 +164,13 @@
   const db = getFirestore(app);
   const googleProvider = new GoogleAuthProvider();
 
-  // אלמנטים
+  // רישום ה-Service Worker המקומי
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker Registered'))
+      .catch(err => console.log('SW Registration Failed:', err));
+  }
+
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
   const googleLoginBtn = document.getElementById('googleLoginBtn');
@@ -160,7 +183,6 @@
   const newStoreInput = document.getElementById('newStoreInput');
   const addStoreBtn = document.getElementById('addStoreBtn');
   const itemInput = document.getElementById('itemInput');
-  const insertPositionSelect = document.getElementById('insertPositionSelect');
   const addBtn = document.getElementById('addBtn');
   const shoppingList = document.getElementById('shoppingList');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
@@ -232,7 +254,7 @@
       currentStore = storeSelect.value;
       listenToShoppingList();
     } catch (error) {
-      console.error("שגיאה בטעינת הסניפים (בדוק Firebase Rules):", error);
+      console.error("שגיאה בטעינת הסניפים:", error);
     }
   }
 
@@ -292,6 +314,7 @@
     shoppingList.innerHTML = '';
     items.forEach((item, index) => {
       const li = document.createElement('li');
+      li.dataset.index = index;
       if (item.completed) li.classList.add('checked');
 
       const hasOrder = storeLayout[item.name] !== undefined;
@@ -299,13 +322,12 @@
 
       li.innerHTML = `
         <div class="item-right">
+          <span class="drag-handle" title="לחץ וגרור לשילוב מיקום">☰</span>
           <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''}>
           <span>${item.name}</span>
         </div>
         <div class="item-left">
           ${orderTag}
-          <button class="order-btn up-btn" title="הזז למעלה">▲</button>
-          <button class="order-btn down-btn" title="הזז למטה">▼</button>
           <button class="delete-btn" title="מחק מוצר">✕</button>
         </div>
       `;
@@ -313,37 +335,70 @@
       const checkbox = li.querySelector('.checkbox');
       checkbox.addEventListener('change', () => toggleItem(item.id, item.name, checkbox.checked));
 
-      const upBtn = li.querySelector('.up-btn');
-      upBtn.addEventListener('click', () => moveItem(index, index - 1));
-
-      const downBtn = li.querySelector('.down-btn');
-      downBtn.addEventListener('click', () => moveItem(index, index + 1));
-
       const deleteBtn = li.querySelector('.delete-btn');
       deleteBtn.addEventListener('click', () => deleteSingleItem(item.id));
+
+      initDragAndDrop(li);
 
       shoppingList.appendChild(li);
     });
   }
 
+  let draggedItem = null;
+
+  function initDragAndDrop(li) {
+    const handle = li.querySelector('.drag-handle');
+
+    handle.addEventListener('touchstart', (e) => {
+      draggedItem = li;
+      li.classList.add('dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', (e) => {
+      if (!draggedItem) return;
+      const touchLocation = e.touches[0];
+      const targetElement = document.elementFromPoint(touchLocation.clientX, touchLocation.clientY);
+      const targetLi = targetElement ? targetElement.closest('li') : null;
+
+      if (targetLi && targetLi !== draggedItem && targetLi.parentNode === shoppingList) {
+        const children = Array.from(shoppingList.children);
+        const draggedIndex = children.indexOf(draggedItem);
+        const targetIndex = children.indexOf(targetLi);
+
+        if (draggedIndex < targetIndex) {
+          shoppingList.insertBefore(draggedItem, targetLi.nextSibling);
+        } else {
+          shoppingList.insertBefore(draggedItem, targetLi);
+        }
+      }
+    }, { passive: true });
+
+    handle.addEventListener('touchend', async () => {
+      if (!draggedItem) return;
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+      await saveNewOrderFromDOM();
+    });
+  }
+
+  async function saveNewOrderFromDOM() {
+    const listItems = Array.from(shoppingList.children);
+    for (let index = 0; index < listItems.length; index++) {
+      const itemNode = listItems[index];
+      const itemIndex = itemNode.dataset.index;
+      const item = currentItems[itemIndex];
+      const newOrder = index + 1;
+
+      if (item) {
+        await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", item.name), { order: newOrder });
+        storeLayout[item.name] = newOrder;
+      }
+    }
+  }
+
   addBtn.addEventListener('click', async () => {
     const text = itemInput.value.trim();
     if (!text || !currentUser) return;
-
-    const position = insertPositionSelect.value;
-    let targetOrder = 999;
-
-    const currentOrders = Object.values(storeLayout);
-    if (position === 'start') {
-      const minOrder = currentOrders.length ? Math.min(...currentOrders) : 1;
-      targetOrder = minOrder > 1 ? minOrder - 1 : 1;
-    } else {
-      const maxOrder = currentOrders.length ? Math.max(...currentOrders) : 0;
-      targetOrder = maxOrder + 1;
-    }
-
-    await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", text), { order: targetOrder });
-    storeLayout[text] = targetOrder;
 
     await addDoc(collection(db, "activeList"), { 
       name: text, 
@@ -353,29 +408,6 @@
 
     itemInput.value = '';
   });
-
-  async function moveItem(fromIndex, toIndex) {
-    if (toIndex < 0 || toIndex >= currentItems.length) return;
-
-    const itemA = currentItems[fromIndex];
-    const itemB = currentItems[toIndex];
-
-    let orderA = storeLayout[itemA.name] !== undefined ? storeLayout[itemA.name] : fromIndex + 1;
-    let orderB = storeLayout[itemB.name] !== undefined ? storeLayout[itemB.name] : toIndex + 1;
-
-    if (orderA === orderB) {
-      orderA = fromIndex + 1;
-      orderB = toIndex + 1;
-    }
-
-    await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemA.name), { order: orderB });
-    await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemB.name), { order: orderA });
-
-    storeLayout[itemA.name] = orderB;
-    storeLayout[itemB.name] = orderA;
-
-    listenToShoppingList();
-  }
 
   async function toggleItem(id, itemName, isChecked) {
     await updateDoc(doc(db, "activeList", id), { completed: isChecked });
