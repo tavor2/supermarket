@@ -22,7 +22,7 @@
       background-color: #ffffff; color: #757575; border: 1px solid #ddd; padding: 12px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+    .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
     .user-badge button { background: none; border: none; color: var(--danger); text-decoration: underline; cursor: pointer; padding: 0; width: auto; font-size: 12px; }
 
     .field { margin-bottom: 15px; }
@@ -65,12 +65,14 @@
     .delete-btn { color: #888; }
 
     .toggle-btn { background: none; color: var(--primary); border: none; text-decoration: underline; padding: 0; margin-bottom: 10px; cursor: pointer; text-align: right; width: auto; font-size: 14px; }
-    .collapsible-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .collapsible-box { background: #f0f4f1; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; font-size: 13px; }
     .collapsible-box.active { display: block; }
 
     .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 15px; cursor: pointer; font-weight: bold; }
     .clear-btn:hover { background-color: #ffebee; }
     .hidden { display: none !important; }
+
+    .share-code-box { background: #fff; padding: 6px; border: 1px dashed #ccc; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 5px 0; }
 
     /* חלונות מודאליים */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
@@ -101,6 +103,16 @@
     <div class="user-badge">
       <span>מחובר כ: <strong id="userNameDisplay"></strong></span>
       <button id="logoutBtn">התנתק</button>
+    </div>
+
+    <button type="button" class="toggle-btn" id="toggleShareForm">👨‍👩‍👧‍👦 שיתוף רשימה משפחתית</button>
+    <div class="collapsible-box" id="shareForm">
+      <div>קוד המשק בית הנוכחי שלך:</div>
+      <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
+      <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
+      <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
+      <input type="text" id="targetHouseholdInput" placeholder="הדבק כאן את הקוד שלהם..." style="font-size: 12px; padding: 8px;">
+      <button id="joinHouseholdBtn" class="btn-primary" style="padding: 8px; font-size: 13px;">חבר לרשימה זו</button>
     </div>
 
     <div class="field">
@@ -210,6 +222,7 @@
   ];
 
   let currentUser = null;
+  let householdId = null;
   let currentStore = "";
   let allCategories = [...defaultCategories];
   let categoryOrder = [...defaultCategories];
@@ -224,6 +237,12 @@
   const googleLoginBtn = document.getElementById('googleLoginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const userNameDisplay = document.getElementById('userNameDisplay');
+
+  const toggleShareForm = document.getElementById('toggleShareForm');
+  const shareForm = document.getElementById('shareForm');
+  const myHouseholdIdDisplay = document.getElementById('myHouseholdIdDisplay');
+  const targetHouseholdInput = document.getElementById('targetHouseholdInput');
+  const joinHouseholdBtn = document.getElementById('joinHouseholdBtn');
 
   const storeSelect = document.getElementById('storeSelect');
   const toggleStoreForm = document.getElementById('toggleStoreForm');
@@ -257,16 +276,19 @@
   googleLoginBtn.addEventListener('click', () => signInWithPopup(auth, googleProvider));
   logoutBtn.addEventListener('click', () => signOut(auth));
 
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUser = user;
       userNameDisplay.textContent = user.displayName || user.email;
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
+
+      await initHousehold();
       listenToGlobalCategories();
       loadStores();
     } else {
       currentUser = null;
+      householdId = null;
       if (unsubscribeShoppingList) unsubscribeShoppingList();
       if (unsubscribeCategories) unsubscribeCategories();
       appSection.classList.add('hidden');
@@ -274,14 +296,42 @@
     }
   });
 
-  // האזנה לקטגוריות מהבסיס נתונים
+  // הטרת משק בית (אישי או משותף)
+  async function initHousehold() {
+    const userRef = doc(db, "users", currentUser.uid);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists() && userDoc.data().householdId) {
+      householdId = userDoc.data().householdId;
+    } else {
+      householdId = currentUser.uid;
+      await setDoc(userRef, { householdId: householdId }, { merge: true });
+    }
+
+    myHouseholdIdDisplay.textContent = householdId;
+  }
+
+  toggleShareForm.addEventListener('click', () => shareForm.classList.toggle('active'));
+
+  joinHouseholdBtn.addEventListener('click', async () => {
+    const targetCode = targetHouseholdInput.value.trim();
+    if (!targetCode) return;
+
+    if (confirm("האם ברצונך להתחבר לרשימה זו? כל המוצרים שתראה מכאן ואילך יהיו משותפים.")) {
+      householdId = targetCode;
+      await setDoc(doc(db, "users", currentUser.uid), { householdId: householdId }, { merge: true });
+      myHouseholdIdDisplay.textContent = householdId;
+      targetHouseholdInput.value = '';
+      shareForm.classList.remove('active');
+      listenToShoppingList();
+    }
+  });
+
   function listenToGlobalCategories() {
     const catQuery = collection(db, "globalCategories");
     unsubscribeCategories = onSnapshot(catQuery, (snapshot) => {
       const customCats = [];
       snapshot.forEach(docSnap => customCats.push(docSnap.data().name));
-      
-      // איחוד קטגוריות ברירת מחדל + קטגוריות מותאמות אישית
       allCategories = Array.from(new Set([...defaultCategories, ...customCats]));
       populateCategoryDropdowns();
     });
@@ -296,7 +346,6 @@
     });
   }
 
-  // הוספת קטגוריה חדשה
   toggleCategoryForm.addEventListener('click', () => categoryForm.classList.toggle('active'));
   
   addCategoryBtn.addEventListener('click', async () => {
@@ -358,12 +407,11 @@
   });
 
   async function loadCategoryOrder() {
-    if (!currentStore || !currentUser) return;
-    const orderDoc = await getDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "config", "categoryOrder"));
+    if (!currentStore || !householdId) return;
+    const orderDoc = await getDoc(doc(db, "households", householdId, "stores", currentStore, "config", "categoryOrder"));
     
     if (orderDoc.exists() && orderDoc.data().order) {
       const savedOrder = orderDoc.data().order;
-      // שילוב קטגוריות חדשות שנוספו מאוחר יותר לסוף הרשימה
       const missing = allCategories.filter(c => !savedOrder.includes(c));
       categoryOrder = [...savedOrder, ...missing];
     } else {
@@ -373,9 +421,9 @@
 
   function listenToShoppingList() {
     if (unsubscribeShoppingList) unsubscribeShoppingList();
-    if (!currentUser) return;
+    if (!householdId) return;
 
-    const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
+    const q = query(collection(db, "activeList"), where("householdId", "==", householdId));
     
     unsubscribeShoppingList = onSnapshot(q, async (snapshot) => {
       await loadCategoryOrder();
@@ -435,13 +483,14 @@
   addBtn.addEventListener('click', async () => {
     const text = itemInput.value.trim();
     const category = itemCategorySelect.value;
-    if (!text || !currentUser) return;
+    if (!text || !householdId) return;
 
     await addDoc(collection(db, "activeList"), { 
       name: text, 
       category: category,
       completed: false, 
-      userId: currentUser.uid 
+      householdId: householdId,
+      createdBy: currentUser.uid
     });
 
     itemInput.value = '';
@@ -470,7 +519,6 @@
     editModal.classList.add('hidden');
   });
 
-  // ניהול סדר קטגוריות בסופר
   openCategoryOrderBtn.addEventListener('click', () => {
     renderCategoryOrderList();
     catOrderModal.classList.remove('hidden');
@@ -504,8 +552,8 @@
   };
 
   catOrderSaveBtn.addEventListener('click', async () => {
-    if (currentUser && currentStore) {
-      await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "config", "categoryOrder"), {
+    if (householdId && currentStore) {
+      await setDoc(doc(db, "households", householdId, "stores", currentStore, "config", "categoryOrder"), {
         order: categoryOrder
       });
       renderListByCategories();
