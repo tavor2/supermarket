@@ -109,6 +109,9 @@
     <div class="collapsible-box" id="shareForm">
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
+      
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
+
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
       <input type="text" id="targetHouseholdInput" placeholder="הדבק כאן את הקוד שלהם..." style="font-size: 12px; padding: 8px;">
@@ -241,6 +244,7 @@
   const toggleShareForm = document.getElementById('toggleShareForm');
   const shareForm = document.getElementById('shareForm');
   const myHouseholdIdDisplay = document.getElementById('myHouseholdIdDisplay');
+  const migrateOldItemsBtn = document.getElementById('migrateOldItemsBtn');
   const targetHouseholdInput = document.getElementById('targetHouseholdInput');
   const joinHouseholdBtn = document.getElementById('joinHouseholdBtn');
 
@@ -296,7 +300,6 @@
     }
   });
 
-  // הטרת משק בית (אישי או משותף)
   async function initHousehold() {
     const userRef = doc(db, "users", currentUser.uid);
     const userDoc = await getDoc(userRef);
@@ -312,6 +315,35 @@
   }
 
   toggleShareForm.addEventListener('click', () => shareForm.classList.toggle('active'));
+
+  // כלי לשיוך המוצרים הישנים למשק הבית החדש
+  migrateOldItemsBtn.addEventListener('click', async () => {
+    if (!currentUser || !householdId) return;
+
+    try {
+      const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        alert("לא נמצאו מוצרים ישנים לשיוך.");
+        return;
+      }
+
+      let updatedCount = 0;
+      for (const docSnap of snapshot.docs) {
+        await updateDoc(doc(db, "activeList", docSnap.id), {
+          householdId: householdId
+        });
+        updatedCount++;
+      }
+
+      alert(`בהצלחה! ${updatedCount} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`);
+      shareForm.classList.remove('active');
+    } catch (err) {
+      console.error(err);
+      alert("אירעה שגיאה במיזוג המוצרים.");
+    }
+  });
 
   joinHouseholdBtn.addEventListener('click', async () => {
     const targetCode = targetHouseholdInput.value.trim();
