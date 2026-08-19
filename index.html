@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>סופר-סדר | רשימת קניות חכמה</title>
+  <style>
+    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; }
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 480px; background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h1 { margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 15px; }
+    
+    /* מסך התחברות */
+    .auth-box { text-align: center; padding: 20px 0; }
+    .google-btn {
+      background-color: #ffffff;
+      color: #757575;
+      border: 1px solid #ddd;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .google-btn:hover { background-color: #f8f8f8; }
+
+    /* בר משתמש מחובר */
+    .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+    .user-badge button { background: none; border: none; color: var(--danger); text-decoration: underline; cursor: pointer; padding: 0; width: auto; font-size: 12px; }
+
+    .field { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+    button.btn-primary { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    .input-group { display: flex; gap: 8px; }
+    .input-group input { flex: 1; }
+    .input-group button { width: auto; margin-top: 0; white-space: nowrap; }
+    
+    ul { list-style: none; padding: 0; margin-top: 20px; }
+    li { background: #f9f9f9; border: 1px solid #eee; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
+    .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
+    .info-tag { font-size: 12px; background: #e0e0e0; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+    
+    .item-right { display: flex; align-items: center; }
+    .item-left { display: flex; align-items: center; }
+    
+    .delete-btn { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
+    .delete-btn:hover { color: var(--danger); }
+
+    .toggle-btn { background: none; color: var(--primary); border: none; text-decoration: underline; padding: 0; margin-bottom: 10px; cursor: pointer; text-align: right; width: auto; font-size: 14px; }
+    .add-store-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .add-store-box.active { display: block; }
+
+    .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; }
+    .clear-btn:hover { background-color: #ffebee; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <h1>🛒 סופר-סדר</h1>
+
+  <!-- מסך התחברות -->
+  <div id="loginSection" class="auth-box">
+    <p>התחבר כדי לשמור ולסנכרן את רשימת הקניות שלך בכל המכשירים</p>
+    <button id="googleLoginBtn" class="google-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+      התחבר באמצעות Google
+    </button>
+  </div>
+
+  <!-- תוכן האפליקציה (מוסתר עד להתחברות) -->
+  <div id="appSection" class="hidden">
+    <div class="user-badge">
+      <span>מחובר כ: <strong id="userNameDisplay"></strong></span>
+      <button id="logoutBtn">התנתק</button>
+    </div>
+
+    <!-- בחירת סניף -->
+    <div class="field">
+      <label for="storeSelect">בחר סניף סופר:</label>
+      <select id="storeSelect"></select>
+    </div>
+
+    <!-- טופס הוספת סניף חדש -->
+    <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
+    <div class="add-store-box" id="storeForm">
+      <div class="input-group">
+        <input type="text" id="newStoreInput" placeholder="שם הסניף (למשל: רמי לוי קריות)...">
+        <button id="addStoreBtn" class="btn-primary">שמור סניף</button>
+      </div>
+    </div>
+
+    <!-- הוספת מוצר -->
+    <div class="field">
+      <label for="itemInput">הוסף מוצר לרשימה:</label>
+      <div class="input-group">
+        <input type="text" id="itemInput" placeholder="למשל: חלב, עגבניות...">
+        <button id="addBtn" class="btn-primary">הוסף</button>
+      </div>
+    </div>
+
+    <ul id="shoppingList"></ul>
+
+    <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מוצרים שנסמנו)</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { 
+    getFirestore, collection, addDoc, getDocs, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyANk2S3HNmlfdm5gKMCDFrK_RfdCA8haaQ",
+    authDomain: "supermarket-e48cd.firebaseapp.com",
+    projectId: "supermarket-e48cd",
+    storageBucket: "supermarket-e48cd.firebasestorage.app",
+    messagingSenderId: "275941739608",
+    appId: "1:275941739608:web:8c7368a38ee682bc9e4e2d",
+    measurementId: "G-96ZZGM3WV5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  // אלמנטים
+  const loginSection = document.getElementById('loginSection');
+  const appSection = document.getElementById('appSection');
+  const googleLoginBtn = document.getElementById('googleLoginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userNameDisplay = document.getElementById('userNameDisplay');
+
+  const storeSelect = document.getElementById('storeSelect');
+  const toggleStoreForm = document.getElementById('toggleStoreForm');
+  const storeForm = document.getElementById('storeForm');
+  const newStoreInput = document.getElementById('newStoreInput');
+  const addStoreBtn = document.getElementById('addStoreBtn');
+  const itemInput = document.getElementById('itemInput');
+  const addBtn = document.getElementById('addBtn');
+  const shoppingList = document.getElementById('shoppingList');
+  const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+
+  let currentUser = null;
+  let currentStore = "";
+  let storeLayout = {};
+  let currentItems = [];
+  let unsubscribeShoppingList = null;
+
+  const defaultStores = [
+    { id: "osher_ad_kb", name: "אושר עד קרית ביאליק" },
+    { id: "shufersal_center", name: "שופרסל מרכז" },
+    { id: "rami_levy_north", name: "רמי לוי צפון" }
+  ];
+
+  // 1. התחברות עם גוגל
+  googleLoginBtn.addEventListener('click', async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("שגיאה בהתחברות:", error);
+      alert("התרחשה שגיאה בהתחברות עם Google.");
+    }
+  });
+
+  // התנתקות
+  logoutBtn.addEventListener('click', () => signOut(auth));
+
+  // האזנה לשינוי מצב התחברות
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      userNameDisplay.textContent = user.displayName || user.email;
+      loginSection.classList.add('hidden');
+      appSection.classList.remove('hidden');
+      loadStores();
+    } else {
+      currentUser = null;
+      if (unsubscribeShoppingList) unsubscribeShoppingList();
+      appSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    }
+  });
+
+  async function loadStores() {
+    const storesRef = collection(db, "storeList");
+    const snapshot = await getDocs(storesRef);
+    let stores = [];
+
+    if (snapshot.empty) {
+      for (const s of defaultStores) {
+        await setDoc(doc(db, "storeList", s.id), { name: s.name });
+        stores.push(s);
+      }
+    } else {
+      snapshot.forEach(docSnap => {
+        stores.push({ id: docSnap.id, name: docSnap.data().name });
+      });
+    }
+
+    storeSelect.innerHTML = '';
+    stores.forEach((store, index) => {
+      const option = document.createElement('option');
+      option.value = store.id;
+      option.textContent = store.name;
+      if (index === 0) option.selected = true;
+      storeSelect.appendChild(option);
+    });
+
+    currentStore = storeSelect.value;
+    listenToShoppingList();
+  }
+
+  toggleStoreForm.addEventListener('click', () => {
+    storeForm.classList.toggle('active');
+  });
+
+  addStoreBtn.addEventListener('click', async () => {
+    const storeName = newStoreInput.value.trim();
+    if (!storeName) return;
+
+    const storeId = "store_" + Date.now();
+    await setDoc(doc(db, "storeList", storeId), { name: storeName });
+
+    newStoreInput.value = '';
+    storeForm.classList.remove('active');
+    
+    await loadStores();
+    storeSelect.value = storeId;
+    currentStore = storeId;
+    listenToShoppingList();
+  });
+
+  async function loadStoreLayout() {
+    storeLayout = {};
+    if (!currentStore || !currentUser) return;
+    
+    // שמירת סדר לפי ה-UID של משתמש הגוגל
+    const layoutRef = collection(db, "users", currentUser.uid, "stores", currentStore, "layout");
+    const snapshot = await getDocs(layoutRef);
+    snapshot.forEach(docSnap => {
+      storeLayout[docSnap.id] = docSnap.data().order;
+    });
+  }
+
+  function listenToShoppingList() {
+    if (unsubscribeShoppingList) unsubscribeShoppingList();
+    if (!currentUser) return;
+
+    // שליפת מוצרים של המשתמש המחובר בלבד
+    const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
+    
+    unsubscribeShoppingList = onSnapshot(q, async (snapshot) => {
+      await loadStoreLayout();
+      currentItems = [];
+      snapshot.forEach(docSnap => currentItems.push({ id: docSnap.id, ...docSnap.data() }));
+
+      currentItems.sort((a, b) => {
+        const orderA = storeLayout[a.name] !== undefined ? storeLayout[a.name] : 999;
+        const orderB = storeLayout[b.name] !== undefined ? storeLayout[b.name] : 999;
+        return orderA - orderB;
+      });
+
+      renderList(currentItems);
+    });
+  }
+
+  function renderList(items) {
+    shoppingList.innerHTML = '';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      if (item.completed) li.classList.add('checked');
+
+      const hasOrder = storeLayout[item.name] !== undefined;
+      const orderTag = hasOrder ? `<span class="info-tag">סדר: ${storeLayout[item.name]}</span>` : '';
+
+      li.innerHTML = `
+        <div class="item-right">
+          <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''}>
+          <span>${item.name}</span>
+        </div>
+        <div class="item-left">
+          ${orderTag}
+          <button class="delete-btn" title="מחק מוצר">✕</button>
+        </div>
+      `;
+
+      const checkbox = li.querySelector('.checkbox');
+      checkbox.addEventListener('change', () => toggleItem(item.id, item.name, checkbox.checked));
+
+      const deleteBtn = li.querySelector('.delete-btn');
+      deleteBtn.addEventListener('click', () => deleteSingleItem(item.id));
+
+      shoppingList.appendChild(li);
+    });
+  }
+
+  addBtn.addEventListener('click', async () => {
+    const text = itemInput.value.trim();
+    if (!text || !currentUser) return;
+
+    await addDoc(collection(db, "activeList"), { 
+      name: text, 
+      completed: false, 
+      userId: currentUser.uid 
+    });
+    itemInput.value = '';
+  });
+
+  async function toggleItem(id, itemName, isChecked) {
+    await updateDoc(doc(db, "activeList", id), { completed: isChecked });
+
+    if (isChecked && storeLayout[itemName] === undefined) {
+      const nextOrder = Object.keys(storeLayout).length + 1;
+      await setDoc(doc(db, "families", currentUser.uid, "stores", currentStore, "layout", itemName), { order: nextOrder });
+      await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemName), { order: nextOrder });
+      storeLayout[itemName] = nextOrder;
+    }
+  }
+
+  async function deleteSingleItem(id) {
+    await deleteDoc(doc(db, "activeList", id));
+  }
+
+  clearCompletedBtn.addEventListener('click', async () => {
+    const completedItems = currentItems.filter(item => item.completed);
+    if (completedItems.length === 0) {
+      alert("אין מוצרים מסומנים למחיקה.");
+      return;
+    }
+
+    if (confirm(`האם למחוק ${completedItems.length} מוצרים שנסמנו?`)) {
+      for (const item of completedItems) {
+        await deleteDoc(doc(db, "activeList", item.id));
+      }
+    }
+  });
+
+  storeSelect.addEventListener('change', (e) => {
+    currentStore = e.target.value;
+    listenToShoppingList();
+  });
+</script>
+
+</body>
+</html>
+
