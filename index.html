@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; --info: #0288d1; --preset: #6a1b9a; }
+    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; --info: #0288d1; }
     body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
     .app-container { width: 100%; max-width: 480px; background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 15px; }
@@ -31,8 +31,6 @@
     button.btn-primary { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
     button.btn-info { background-color: var(--info); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     button.btn-secondary { background-color: #757575; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    button.btn-preset { background-color: var(--preset); color: white; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    button.btn-save-preset { background-color: #e65100; color: white; border: none; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 13px; padding: 8px; }
     
     .input-group { display: flex; gap: 8px; margin-bottom: 8px; }
     .input-group input { flex: 2; }
@@ -106,16 +104,6 @@
       <span>מחובר כ: <strong id="userNameDisplay"></strong></span>
       <button id="logoutBtn">התנתק</button>
     </div>
-
-    <!-- כפתור טעינה למשתמשים חדשים -->
-    <button id="loadPresetBtn" class="btn-preset">
-      ✨ טען רשימת מומלצים מלאה (לכל הקטגוריות)
-    </button>
-
-    <!-- כפתור שמירה ייעודי עבורך לשמירת 170+ המוצרים כתבנית מרכזית -->
-    <button id="saveAsPresetBtn" class="btn-save-preset">
-      💾 שמור את הרשימה הנוכחית שלי כתבנית לכולם
-    </button>
 
     <button type="button" class="toggle-btn" id="toggleShareForm">👨‍👩‍👧‍👦 שיתוף רשימה משפחתית</button>
     <div class="collapsible-box" id="shareForm">
@@ -252,8 +240,6 @@
   const googleLoginBtn = document.getElementById('googleLoginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const userNameDisplay = document.getElementById('userNameDisplay');
-  const loadPresetBtn = document.getElementById('loadPresetBtn');
-  const saveAsPresetBtn = document.getElementById('saveAsPresetBtn');
 
   const toggleShareForm = document.getElementById('toggleShareForm');
   const shareForm = document.getElementById('shareForm');
@@ -328,63 +314,9 @@
     myHouseholdIdDisplay.textContent = householdId;
   }
 
-  // 1. שמירת כל 170+ המוצרים שאתה בנית עכשיו כתבנית מרכזית
-  saveAsPresetBtn.addEventListener('click', async () => {
-    if (!currentItems.length) return alert("אין מוצרים ברשימה לשמירה.");
-    
-    if (confirm(`האם ברצונך לשמור את כל ${currentItems.length} המוצרים שברשימה כתבנית מרכזית עבור כל המשתמשים?`)) {
-      try {
-        const cleanItems = currentItems.map(item => ({
-          name: item.name,
-          category: item.category || "כללי"
-        }));
-
-        await setDoc(doc(db, "premadeLists", "default_list"), {
-          items: cleanItems,
-          updatedAt: new Date()
-        });
-
-        alert(`בהצלחה! ${cleanItems.length} מוצרים נשמרו כתבנית הציבורית הראשי!`);
-      } catch (err) {
-        console.error(err);
-        alert("אירעה שגיאה בשמירת התבנית.");
-      }
-    }
-  });
-
-  // 2. טעינת התבנית המלאה על ידי משתמש חדש
-  loadPresetBtn.addEventListener('click', async () => {
-    if (!householdId || !currentUser) return alert("יש להתחבר תחילה.");[span_2](start_span)[span_2](end_span)
-
-    try {
-      const presetDoc = await getDoc(doc(db, "premadeLists", "default_list"));[span_3](start_span)[span_3](end_span)
-      
-      if (!presetDoc.exists() || !presetDoc.data().items) {
-        return alert("טרם נשמרה תבנית מרכזית. לחץ קודם על 'שמור את הרשימה הנוכחית שלי כתבנית לכולם'.");
-      }
-
-      const itemsToLoad = presetDoc.data().items;
-
-      if (confirm(`האם ברצונך לטעון ${itemsToLoad.length} מוצרים מומלצים לרשימה שלך?`)) {
-        for (const item of itemsToLoad) {
-          await addDoc(collection(db, "activeList"), {[span_4](start_span)[span_4](end_span)
-            name: item.name,
-            category: item.category,
-            completed: false,[span_5](start_span)[span_5](end_span)
-            householdId: householdId,[span_6](start_span)[span_6](end_span)
-            createdBy: currentUser.uid[span_7](start_span)[span_7](end_span)
-          });
-        }
-        alert("כל המוצרים התווספו בהצלחה לרשימה שלך!");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("אירעה שגיאה שטעינת המוצרים.");
-    }
-  });
-
   toggleShareForm.addEventListener('click', () => shareForm.classList.toggle('active'));
 
+  // כלי לשיוך המוצרים הישנים למשק הבית החדש
   migrateOldItemsBtn.addEventListener('click', async () => {
     if (!currentUser || !householdId) return;
 
