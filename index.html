@@ -323,7 +323,7 @@
     myHouseholdIdDisplay.textContent = householdId;
   }
 
-  // --- פונקציות מאגר מוצרים קבוע (Master Catalog) ---
+  // --- שמירה למאגר הקבוע (חסינת כפילויות) ---
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
     if (currentItems.length === 0) {
@@ -331,7 +331,7 @@
       return;
     }
 
-    if (confirm(`האם לשמור ${currentItems.length} מוצרים מהרשימה הנוכחית כמאגר קבוע?`)) {
+    if (confirm(`האם לשמור את הרשימה הנוכחית כמאגר קבוע?`)) {
       try {
         const catalogRef = collection(db, "households", householdId, "masterCatalog");
         const existingDocs = await getDocs(catalogRef);
@@ -339,13 +339,22 @@
           await deleteDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id));
         }
 
+        // סינון כפילויות פנימי ברשימה הנוכחית לפני שמירה
+        const uniqueItemsMap = new Map();
         for (const item of currentItems) {
-          await addDoc(catalogRef, {
-            name: item.name,
-            category: item.category || "כללי"
-          });
+          const key = item.name.trim().toLowerCase();
+          if (!uniqueItemsMap.has(key)) {
+            uniqueItemsMap.set(key, {
+              name: item.name.trim(),
+              category: item.category || "כללי"
+            });
+          }
         }
-        alert("המאגר הקבוע נשמר בהצלחה!");
+
+        for (const item of uniqueItemsMap.values()) {
+          await addDoc(catalogRef, item);
+        }
+        alert(`המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים)`);
       } catch (err) {
         console.error(err);
         alert("שגיאה בשמירת המאגר.");
@@ -353,6 +362,7 @@
     }
   });
 
+  // --- טעינה מהמאגר הקבוע (חסינת כפילויות) ---
   loadMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
 
@@ -365,12 +375,16 @@
         return;
       }
 
-      if (confirm("האם לטעון את המאגר הקבוע לרשימת הקניות הנוכחית?")) {
+      if (confirm("האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)")) {
+        // יצירת Set של שמות המוצרים הקיימים כרגע ברשימה למניעת כפילויות
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
+        let addedCount = 0;
 
         for (const docSnap of catalogSnapshot.docs) {
           const catItem = docSnap.data();
-          if (!existingNames.has(catItem.name.trim().toLowerCase())) {
+          const cleanName = catItem.name.trim().toLowerCase();
+
+          if (!existingNames.has(cleanName)) {
             await addDoc(collection(db, "activeList"), {
               name: catItem.name,
               category: catItem.category,
@@ -378,13 +392,20 @@
               householdId: householdId,
               createdBy: currentUser.uid
             });
+            existingNames.add(cleanName);
+            addedCount++;
           }
         }
-        alert("המוצרים מהמאגר הקבוע נטענו בהצלחה!");
+
+        if (addedCount > 0) {
+          alert(`נטענו ${addedCount} מוצרים חדשים מהמאגר הקבוע!`);
+        } else {
+          alert("כל המוצרים מהמאגר הקבוע כבר קיימים ברשימה הנוכחית.");
+        }
       }
     } catch (err) {
       console.error(err);
-      alert("שגיאה שטעינת המאגר.");
+      alert("שגיאה בטעינת המאגר.");
     }
   });
 
@@ -589,6 +610,13 @@
     const text = itemInput.value.trim();
     const category = itemCategorySelect.value;
     if (!text || !householdId) return;
+
+    // מניעת הוספה ידנית של כפילות לרשימה הפעילה
+    const exists = currentItems.some(i => i.name.trim().toLowerCase() === text.toLowerCase());
+    if (exists) {
+      alert("מוצר זה כבר קיים ברשימה הקנייה שלך.");
+      return;
+    }
 
     await addDoc(collection(db, "activeList"), { 
       name: text, 
