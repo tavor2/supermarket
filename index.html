@@ -105,6 +105,12 @@
       <button id="logoutBtn">התנתק</button>
     </div>
 
+    <!-- כפתורי מאגר מוצרים קבוע -->
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+      <button id="loadMasterBtn" class="btn-info" style="font-size: 13px; margin: 0; padding: 10px;">🔄 טען רשימה מהמאגר הקבוע</button>
+      <button id="saveMasterBtn" class="btn-secondary" style="font-size: 13px; margin: 0; padding: 10px; background-color: #455a64;">💾 שמור רשימה כמאגר קבוע</button>
+    </div>
+
     <button type="button" class="toggle-btn" id="toggleShareForm">👨‍👩‍👧‍👦 שיתוף רשימה משפחתית</button>
     <div class="collapsible-box" id="shareForm">
       <div>קוד המשק בית הנוכחי שלך:</div>
@@ -241,6 +247,9 @@
   const logoutBtn = document.getElementById('logoutBtn');
   const userNameDisplay = document.getElementById('userNameDisplay');
 
+  const saveMasterBtn = document.getElementById('saveMasterBtn');
+  const loadMasterBtn = document.getElementById('loadMasterBtn');
+
   const toggleShareForm = document.getElementById('toggleShareForm');
   const shareForm = document.getElementById('shareForm');
   const myHouseholdIdDisplay = document.getElementById('myHouseholdIdDisplay');
@@ -314,9 +323,73 @@
     myHouseholdIdDisplay.textContent = householdId;
   }
 
+  // --- פונקציות מאגר מוצרים קבוע (Master Catalog) ---
+  saveMasterBtn.addEventListener('click', async () => {
+    if (!householdId) return;
+    if (currentItems.length === 0) {
+      alert("הרשימה הנוכחית ריקה. הוסף מוצרים לפני השמירה כמאגר קבוע.");
+      return;
+    }
+
+    if (confirm(`האם לשמור ${currentItems.length} מוצרים מהרשימה הנוכחית כמאגר קבוע?`)) {
+      try {
+        const catalogRef = collection(db, "households", householdId, "masterCatalog");
+        const existingDocs = await getDocs(catalogRef);
+        for (const docSnap of existingDocs.docs) {
+          await deleteDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id));
+        }
+
+        for (const item of currentItems) {
+          await addDoc(catalogRef, {
+            name: item.name,
+            category: item.category || "כללי"
+          });
+        }
+        alert("המאגר הקבוע נשמר בהצלחה!");
+      } catch (err) {
+        console.error(err);
+        alert("שגיאה בשמירת המאגר.");
+      }
+    }
+  });
+
+  loadMasterBtn.addEventListener('click', async () => {
+    if (!householdId) return;
+
+    try {
+      const catalogRef = collection(db, "households", householdId, "masterCatalog");
+      const catalogSnapshot = await getDocs(catalogRef);
+
+      if (catalogSnapshot.empty) {
+        alert("לא נמצא מאגר קבוע שמור. השתמש בכפתור השמירה כדי ליצור אחד.");
+        return;
+      }
+
+      if (confirm("האם לטעון את המאגר הקבוע לרשימת הקניות הנוכחית?")) {
+        const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
+
+        for (const docSnap of catalogSnapshot.docs) {
+          const catItem = docSnap.data();
+          if (!existingNames.has(catItem.name.trim().toLowerCase())) {
+            await addDoc(collection(db, "activeList"), {
+              name: catItem.name,
+              category: catItem.category,
+              completed: false,
+              householdId: householdId,
+              createdBy: currentUser.uid
+            });
+          }
+        }
+        alert("המוצרים מהמאגר הקבוע נטענו בהצלחה!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("שגיאה שטעינת המאגר.");
+    }
+  });
+
   toggleShareForm.addEventListener('click', () => shareForm.classList.toggle('active'));
 
-  // כלי לשיוך המוצרים הישנים למשק הבית החדש
   migrateOldItemsBtn.addEventListener('click', async () => {
     if (!currentUser || !householdId) return;
 
