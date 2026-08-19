@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-title" content="רשימת קניות">
   <title>רשימת קניות | רשימת קניות חכמה</title>
 
-  <!-- קישור לקובץ ה-Manifest -->
   <link rel="manifest" href="manifest.json">
 
   <style>
@@ -20,21 +19,8 @@
     
     .auth-box { text-align: center; padding: 20px 0; }
     .google-btn {
-      background-color: #ffffff;
-      color: #757575;
-      border: 1px solid #ddd;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      background-color: #ffffff; color: #757575; border: 1px solid #ddd; padding: 12px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .google-btn:hover { background-color: #f8f8f8; }
 
     .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
     .user-badge button { background: none; border: none; color: var(--danger); text-decoration: underline; cursor: pointer; padding: 0; width: auto; font-size: 12px; }
@@ -44,50 +30,39 @@
     input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
     button.btn-primary { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
     button.btn-info { background-color: var(--info); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .input-group { display: flex; gap: 8px; }
-    .input-group input { flex: 1; }
-    .input-group button { width: auto; margin-top: 0; white-space: nowrap; }
+    button.btn-secondary { background-color: #757575; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     
-    ul { list-style: none; padding: 0; margin-top: 20px; }
-    li { 
-      background: #f9f9f9; 
-      border: 1px solid #eee; 
-      padding: 12px 14px; 
-      border-radius: 8px; 
-      margin-bottom: 8px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between;
-      touch-action: none;
-      user-select: none;
-      transition: background-color 0.2s, box-shadow 0.2s;
-    }
-    li.dragging {
-      opacity: 0.6;
+    .input-group { display: flex; gap: 8px; margin-bottom: 8px; }
+    .input-group input { flex: 2; }
+    .input-group select { flex: 1.5; }
+    .input-group button { flex: 1; margin-top: 0; white-space: nowrap; }
+    
+    .category-header {
       background: #e8f5e9;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      color: var(--primary);
+      padding: 8px 12px;
+      font-weight: bold;
+      border-radius: 6px;
+      margin-top: 15px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { 
+      background: #f9f9f9; border: 1px solid #eee; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; touch-action: none; user-select: none; transition: background-color 0.2s, box-shadow 0.2s;
     }
     li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
     .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
-    .info-tag { font-size: 11px; background: #e0e0e0; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
     
     .item-right { display: flex; align-items: center; }
     .item-left { display: flex; align-items: center; gap: 6px; }
-    
-    .drag-handle { 
-      cursor: grab; 
-      color: #aaa; 
-      font-size: 18px; 
-      padding: 0 4px; 
-      margin-left: 6px;
-    }
-    .drag-handle:active { cursor: grabbing; }
 
-    .edit-btn { background: none; border: none; color: #666; font-size: 16px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
-    .edit-btn:hover { color: var(--primary); }
-
-    .delete-btn { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
-    .delete-btn:hover { color: var(--danger); }
+    .edit-btn, .delete-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
+    .edit-btn { color: #666; }
+    .delete-btn { color: #888; }
 
     .toggle-btn { background: none; color: var(--primary); border: none; text-decoration: underline; padding: 0; margin-bottom: 10px; cursor: pointer; text-align: right; width: auto; font-size: 14px; }
     .add-store-box { background: #f0f4f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
@@ -97,28 +72,16 @@
     .clear-btn:hover { background-color: #ffebee; }
     .hidden { display: none !important; }
 
-    /* עיצוב חלון העריכה המותאם אישית */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal-box {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 360px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
+    /* חלונות מודאליים */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
     .modal-box h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--text); }
     .modal-actions { display: flex; gap: 8px; margin-top: 15px; }
     .modal-actions button { flex: 1; padding: 10px; font-weight: bold; cursor: pointer; }
     .btn-cancel { background: #e0e0e0; border: none; border-radius: 8px; color: #333; }
+
+    .cat-order-list { list-style: none; padding: 0; margin: 10px 0; }
+    .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; cursor: move; }
   </style>
 </head>
 <body>
@@ -148,35 +111,57 @@
     <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
     <div class="add-store-box" id="storeForm">
       <div class="input-group">
-        <input type="text" id="newStoreInput" placeholder="שם הסניף (למשל: רמי לוי קריות)...">
-        <button id="addStoreBtn" class="btn-primary">שמור סניף</button>
+        <input type="text" id="newStoreInput" placeholder="שם הסניף...">
+        <button id="addStoreBtn" class="btn-primary">שמור</button>
       </div>
     </div>
 
     <div class="field">
       <label for="itemInput">הוסף מוצר לרשימה:</label>
       <div class="input-group">
-        <input type="text" id="itemInput" placeholder="למשל: חלב, עגבניות...">
+        <input type="text" id="itemInput" placeholder="שם המוצר...">
+        <select id="itemCategorySelect"></select>
         <button id="addBtn" class="btn-primary">הוסף</button>
       </div>
     </div>
 
+    <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר (קטגוריות)</button>
     <button id="loadLastListBtn" class="btn-info">🔄 טען מוצרים מקנייה אחרונה</button>
 
-    <ul id="shoppingList"></ul>
+    <div id="shoppingListContainer"></div>
 
     <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מוצרים שנסמנו)</button>
   </div>
 </div>
 
-<!-- חלון מודאלי מותאם אישית לעריכת שם פריט -->
+<!-- מודאל עריכת מוצר -->
 <div id="editModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3>עדכן את שם הפריט</h3>
-    <input type="text" id="editModalInput">
+    <h3>עדכן פריט</h3>
+    <div class="field">
+      <label>שם הפריט:</label>
+      <input type="text" id="editModalInput">
+    </div>
+    <div class="field">
+      <label>קטגוריה:</label>
+      <select id="editModalCategorySelect"></select>
+    </div>
     <div class="modal-actions">
       <button id="editModalSaveBtn" class="btn-primary">אישור</button>
       <button id="editModalCancelBtn" class="btn-cancel">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודאל סידור קטגוריות לסופר -->
+<div id="catOrderModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>סדר הקטגוריות בסופר</h3>
+    <p style="font-size: 13px; color: #666;">גרור או השתמש בחיצים כדי לסדר את המסלול בסופר:</p>
+    <ul id="catOrderList" class="cat-order-list"></ul>
+    <div class="modal-actions">
+      <button id="catOrderSaveBtn" class="btn-primary">שמור סדר</button>
+      <button id="catOrderCancelBtn" class="btn-cancel">ביטול</button>
     </div>
   </div>
 </div>
@@ -205,12 +190,23 @@
   const db = getFirestore(app);
   const googleProvider = new GoogleAuthProvider();
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker Registered'))
-      .catch(err => console.log('SW Registration Failed:', err));
-  }
+  const defaultCategories = [
+    "חומרי כביסה וניקוי",
+    "דברי מאפה",
+    "קפואים",
+    "ירקות ופירות",
+    "מוצרי גבינה וחלב",
+    "כללי"
+  ];
 
+  let currentUser = null;
+  let currentStore = "";
+  let categoryOrder = [...defaultCategories];
+  let currentItems = [];
+  let unsubscribeShoppingList = null;
+  let activeEditingItem = null;
+
+  // DOM elements
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
   const googleLoginBtn = document.getElementById('googleLoginBtn');
@@ -222,40 +218,27 @@
   const storeForm = document.getElementById('storeForm');
   const newStoreInput = document.getElementById('newStoreInput');
   const addStoreBtn = document.getElementById('addStoreBtn');
+  
   const itemInput = document.getElementById('itemInput');
+  const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
-  const loadLastListBtn = document.getElementById('loadLastListBtn');
-  const shoppingList = document.getElementById('shoppingList');
+  const shoppingListContainer = document.getElementById('shoppingListContainer');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+  const loadLastListBtn = document.getElementById('loadLastListBtn');
 
-  // אלמנטים של החלון המודאלי
   const editModal = document.getElementById('editModal');
   const editModalInput = document.getElementById('editModalInput');
+  const editModalCategorySelect = document.getElementById('editModalCategorySelect');
   const editModalSaveBtn = document.getElementById('editModalSaveBtn');
   const editModalCancelBtn = document.getElementById('editModalCancelBtn');
 
-  let currentUser = null;
-  let currentStore = "";
-  let storeLayout = {};
-  let currentItems = [];
-  let unsubscribeShoppingList = null;
-  let activeEditingItem = null;
+  const openCategoryOrderBtn = document.getElementById('openCategoryOrderBtn');
+  const catOrderModal = document.getElementById('catOrderModal');
+  const catOrderList = document.getElementById('catOrderList');
+  const catOrderSaveBtn = document.getElementById('catOrderSaveBtn');
+  const catOrderCancelBtn = document.getElementById('catOrderCancelBtn');
 
-  const defaultStores = [
-    { id: "osher_ad_kb", name: "אושר עד קרית ביאליק" },
-    { id: "shufersal_center", name: "שופרסל מרכז" },
-    { id: "rami_levy_north", name: "רמי לוי צפון" }
-  ];
-
-  googleLoginBtn.addEventListener('click', async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("שגיאה בהתחברות:", error);
-      alert("התרחשה שגיאה בהתחברות עם Google.");
-    }
-  });
-
+  googleLoginBtn.addEventListener('click', () => signInWithPopup(auth, googleProvider));
   logoutBtn.addEventListener('click', () => signOut(auth));
 
   onAuthStateChanged(auth, (user) => {
@@ -264,6 +247,7 @@
       userNameDisplay.textContent = user.displayName || user.email;
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
+      populateCategoryDropdowns();
       loadStores();
     } else {
       currentUser = null;
@@ -273,68 +257,69 @@
     }
   });
 
-  async function loadStores() {
-    try {
-      const storesRef = collection(db, "storeList");
-      const snapshot = await getDocs(storesRef);
-      let stores = [];
-
-      if (snapshot.empty) {
-        for (const s of defaultStores) {
-          await setDoc(doc(db, "storeList", s.id), { name: s.name });
-          stores.push(s);
-        }
-      } else {
-        snapshot.forEach(docSnap => {
-          stores.push({ id: docSnap.id, name: docSnap.data().name });
-        });
-      }
-
-      storeSelect.innerHTML = '';
-      stores.forEach((store, index) => {
-        const option = document.createElement('option');
-        option.value = store.id;
-        option.textContent = store.name;
-        if (index === 0) option.selected = true;
-        storeSelect.appendChild(option);
-      });
-
-      currentStore = storeSelect.value;
-      listenToShoppingList();
-    } catch (error) {
-      console.error("שגיאה בטעינת הסניפים:", error);
-    }
+  function populateCategoryDropdowns() {
+    itemCategorySelect.innerHTML = '';
+    editModalCategorySelect.innerHTML = '';
+    defaultCategories.forEach(cat => {
+      itemCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      editModalCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
   }
 
-  toggleStoreForm.addEventListener('click', () => {
-    storeForm.classList.toggle('active');
-  });
+  async function loadStores() {
+    const storesRef = collection(db, "storeList");
+    const snapshot = await getDocs(storesRef);
+    let stores = [];
+
+    if (snapshot.empty) {
+      const defaults = [
+        { id: "osher_ad", name: "אושר עד" },
+        { id: "shufersal", name: "שופרסל" }
+      ];
+      for (const s of defaults) {
+        await setDoc(doc(db, "storeList", s.id), { name: s.name });
+        stores.push(s);
+      }
+    } else {
+      snapshot.forEach(docSnap => stores.push({ id: docSnap.id, name: docSnap.data().name }));
+    }
+
+    storeSelect.innerHTML = '';
+    stores.forEach((store, idx) => {
+      const opt = document.createElement('option');
+      opt.value = store.id;
+      opt.textContent = store.name;
+      if (idx === 0) opt.selected = true;
+      storeSelect.appendChild(opt);
+    });
+
+    currentStore = storeSelect.value;
+    listenToShoppingList();
+  }
+
+  toggleStoreForm.addEventListener('click', () => storeForm.classList.toggle('active'));
 
   addStoreBtn.addEventListener('click', async () => {
-    const storeName = newStoreInput.value.trim();
-    if (!storeName) return;
-
+    const name = newStoreInput.value.trim();
+    if (!name) return;
     const storeId = "store_" + Date.now();
-    await setDoc(doc(db, "storeList", storeId), { name: storeName });
-
+    await setDoc(doc(db, "storeList", storeId), { name });
     newStoreInput.value = '';
     storeForm.classList.remove('active');
-    
     await loadStores();
     storeSelect.value = storeId;
     currentStore = storeId;
     listenToShoppingList();
   });
 
-  async function loadStoreLayout() {
-    storeLayout = {};
+  async function loadCategoryOrder() {
     if (!currentStore || !currentUser) return;
-    
-    const layoutRef = collection(db, "users", currentUser.uid, "stores", currentStore, "layout");
-    const snapshot = await getDocs(layoutRef);
-    snapshot.forEach(docSnap => {
-      storeLayout[docSnap.id] = docSnap.data().order;
-    });
+    const orderDoc = await getDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "config", "categoryOrder"));
+    if (orderDoc.exists() && orderDoc.data().order) {
+      categoryOrder = orderDoc.data().order;
+    } else {
+      categoryOrder = [...defaultCategories];
+    }
   }
 
   function listenToShoppingList() {
@@ -344,177 +329,70 @@
     const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
     
     unsubscribeShoppingList = onSnapshot(q, async (snapshot) => {
-      await loadStoreLayout();
+      await loadCategoryOrder();
       currentItems = [];
       snapshot.forEach(docSnap => currentItems.push({ id: docSnap.id, ...docSnap.data() }));
-
-      currentItems.sort((a, b) => {
-        const orderA = storeLayout[a.name] !== undefined ? storeLayout[a.name] : 999;
-        const orderB = storeLayout[b.name] !== undefined ? storeLayout[b.name] : 999;
-        return orderA - orderB;
-      });
-
-      renderList(currentItems);
+      renderListByCategories();
     });
   }
 
-  function renderList(items) {
-    shoppingList.innerHTML = '';
-    items.forEach((item) => {
-      const li = document.createElement('li');
-      li.dataset.id = item.id;
-      li.dataset.name = item.name;
-      if (item.completed) li.classList.add('checked');
+  function renderListByCategories() {
+    shoppingListContainer.innerHTML = '';
 
-      const hasOrder = storeLayout[item.name] !== undefined;
-      const orderTag = hasOrder ? `<span class="info-tag">#${storeLayout[item.name]}</span>` : '';
-
-      li.innerHTML = `
-        <div class="item-right">
-          <span class="drag-handle" title="לחץ וגרור לשילוב מיקום">☰</span>
-          <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''}>
-          <span class="item-name">${item.name}</span>
-        </div>
-        <div class="item-left">
-          ${orderTag}
-          <button class="edit-btn" title="ערוך שם פריט">✏️</button>
-          <button class="delete-btn" title="מחק מוצר">✕</button>
-        </div>
-      `;
-
-      const checkbox = li.querySelector('.checkbox');
-      checkbox.addEventListener('change', () => toggleItem(item.id, item.name, checkbox.checked));
-
-      const editBtn = li.querySelector('.edit-btn');
-      editBtn.addEventListener('click', () => openEditModal(item.id, item.name));
-
-      const deleteBtn = li.querySelector('.delete-btn');
-      deleteBtn.addEventListener('click', () => deleteSingleItem(item.id));
-
-      initDragAndDrop(li);
-
-      shoppingList.appendChild(li);
+    // הקבצה לפי קטגוריה
+    const grouped = {};
+    currentItems.forEach(item => {
+      const cat = item.category || "כללי";
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
     });
-  }
 
-  function openEditModal(id, currentName) {
-    activeEditingItem = { id, oldName: currentName };
-    editModalInput.value = currentName;
-    editModal.classList.remove('hidden');
-    editModalInput.focus();
-  }
+    // הצגה לפי סדר הקטגוריות המוגדר לסניף
+    categoryOrder.forEach(cat => {
+      if (grouped[cat] && grouped[cat].length > 0) {
+        const catHeader = document.createElement('div');
+        catHeader.className = 'category-header';
+        catHeader.innerHTML = `<span>📂 ${cat}</span><span>(${grouped[cat].length})</span>`;
+        shoppingListContainer.appendChild(catHeader);
 
-  function closeEditModal() {
-    editModal.classList.add('hidden');
-    activeEditingItem = null;
-  }
+        const ul = document.createElement('ul');
+        grouped[cat].forEach(item => {
+          const li = document.createElement('li');
+          if (item.completed) li.classList.add('checked');
 
-  editModalCancelBtn.addEventListener('click', closeEditModal);
+          li.innerHTML = `
+            <div class="item-right">
+              <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''}>
+              <span>${item.name}</span>
+            </div>
+            <div class="item-left">
+              <button class="edit-btn">✏️</button>
+              <button class="delete-btn">✕</button>
+            </div>
+          `;
 
-  editModalSaveBtn.addEventListener('click', async () => {
-    if (!activeEditingItem) return;
+          li.querySelector('.checkbox').addEventListener('change', (e) => {
+            updateDoc(doc(db, "activeList", item.id), { completed: e.target.checked });
+          });
 
-    const newName = editModalInput.value.trim();
-    const { id, oldName } = activeEditingItem;
+          li.querySelector('.edit-btn').addEventListener('click', () => openEditModal(item));
+          li.querySelector('.delete-btn').addEventListener('click', () => deleteDoc(doc(db, "activeList", item.id)));
 
-    if (!newName || newName === oldName) {
-      closeEditModal();
-      return;
-    }
-
-    try {
-      await updateDoc(doc(db, "activeList", id), { name: newName });
-
-      if (storeLayout[oldName] !== undefined && currentUser && currentStore) {
-        const orderVal = storeLayout[oldName];
-
-        // עדכון אובייקט הזיכרון המקומי באופן מיידי כדי למנוע את קפיצת המוצר לסוף הרשימה
-        storeLayout[newName] = orderVal;
-        delete storeLayout[oldName];
-
-        await setDoc(
-          doc(db, "users", currentUser.uid, "stores", currentStore, "layout", newName), 
-          { order: orderVal }
-        );
-
-        await deleteDoc(
-          doc(db, "users", currentUser.uid, "stores", currentStore, "layout", oldName)
-        );
-      }
-    } catch (error) {
-      console.error("שגיאה בעדכון שם הפריט:", error);
-      alert("התרחשה שגיאה בעדכון שם הפריט.");
-    } finally {
-      closeEditModal();
-    }
-  });
-
-  let draggedItem = null;
-
-  function initDragAndDrop(li) {
-    const handle = li.querySelector('.drag-handle');
-
-    handle.addEventListener('touchstart', (e) => {
-      draggedItem = li;
-      li.classList.add('dragging');
-    }, { passive: true });
-
-    handle.addEventListener('touchmove', (e) => {
-      if (!draggedItem) return;
-      const touchLocation = e.touches[0];
-      const targetElement = document.elementFromPoint(touchLocation.clientX, touchLocation.clientY);
-      const targetLi = targetElement ? targetElement.closest('li') : null;
-
-      if (targetLi && targetLi !== draggedItem && targetLi.parentNode === shoppingList) {
-        const children = Array.from(shoppingList.children);
-        const draggedIndex = children.indexOf(draggedItem);
-        const targetIndex = children.indexOf(targetLi);
-
-        if (draggedIndex < targetIndex) {
-          shoppingList.insertBefore(draggedItem, targetLi.nextSibling);
-        } else {
-          shoppingList.insertBefore(draggedItem, targetLi);
-        }
-      }
-    }, { passive: true });
-
-    handle.addEventListener('touchend', async () => {
-      if (!draggedItem) return;
-      draggedItem.classList.remove('dragging');
-      draggedItem = null;
-      await saveNewOrderFromDOM();
-    });
-  }
-
-  async function saveNewOrderFromDOM() {
-    const listItems = Array.from(shoppingList.children);
-    
-    listItems.forEach((itemNode, index) => {
-      const itemName = itemNode.dataset.name;
-      if (itemName) {
-        storeLayout[itemName] = index + 1;
+          ul.appendChild(li);
+        });
+        shoppingListContainer.appendChild(ul);
       }
     });
-
-    const promises = listItems.map((itemNode, index) => {
-      const itemName = itemNode.dataset.name;
-      if (itemName) {
-        return setDoc(
-          doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemName), 
-          { order: index + 1 }
-        );
-      }
-    });
-
-    await Promise.all(promises);
   }
 
   addBtn.addEventListener('click', async () => {
     const text = itemInput.value.trim();
+    const category = itemCategorySelect.value;
     if (!text || !currentUser) return;
 
     await addDoc(collection(db, "activeList"), { 
       name: text, 
+      category: category,
       completed: false, 
       userId: currentUser.uid 
     });
@@ -522,76 +400,80 @@
     itemInput.value = '';
   });
 
-  async function toggleItem(id, itemName, isChecked) {
-    await updateDoc(doc(db, "activeList", id), { completed: isChecked });
-
-    if (isChecked && storeLayout[itemName] === undefined) {
-      const currentOrders = Object.values(storeLayout);
-      const nextOrder = currentOrders.length ? Math.max(...currentOrders) + 1 : 1;
-      await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemName), { order: nextOrder });
-      storeLayout[itemName] = nextOrder;
-    }
+  function openEditModal(item) {
+    activeEditingItem = item;
+    editModalInput.value = item.name;
+    editModalCategorySelect.value = item.category || "כללי";
+    editModal.classList.remove('hidden');
   }
 
-  async function deleteSingleItem(id) {
-    await deleteDoc(doc(db, "activeList", id));
-  }
+  editModalCancelBtn.addEventListener('click', () => editModal.classList.add('hidden'));
 
-  clearCompletedBtn.addEventListener('click', async () => {
-    const completedItems = currentItems.filter(item => item.completed);
-    if (completedItems.length === 0) {
-      alert("אין מוצרים מסומנים למחיקה.");
-      return;
+  editModalSaveBtn.addEventListener('click', async () => {
+    if (!activeEditingItem) return;
+    const newName = editModalInput.value.trim();
+    const newCat = editModalCategorySelect.value;
+
+    if (newName) {
+      await updateDoc(doc(db, "activeList", activeEditingItem.id), {
+        name: newName,
+        category: newCat
+      });
     }
-
-    if (confirm(`האם לסיים קנייה ולמחוק ${completedItems.length} מוצרים שנסמנו?`)) {
-      const historyDocRef = doc(db, "users", currentUser.uid, "stores", currentStore, "history", "lastList");
-      const itemsToSave = completedItems.map(item => item.name);
-      
-      await setDoc(historyDocRef, { items: itemsToSave, updatedAt: new Date() });
-
-      for (const item of completedItems) {
-        await deleteDoc(doc(db, "activeList", item.id));
-      }
-
-      alert("הקנייה הסתיימה! המוצרים נשמרו כתבנית לקנייה הבאה.");
-    }
+    editModal.classList.add('hidden');
   });
 
-  loadLastListBtn.addEventListener('click', async () => {
-    if (!currentUser || !currentStore) return;
+  // ניהול סדר קטגוריות בסופר
+  openCategoryOrderBtn.addEventListener('click', () => {
+    renderCategoryOrderList();
+    catOrderModal.classList.remove('hidden');
+  });
 
-    try {
-      const historyDocRef = doc(db, "users", currentUser.uid, "stores", currentStore, "history", "lastList");
-      const docSnap = await getDoc(historyDocRef);
+  catOrderCancelBtn.addEventListener('click', () => catOrderModal.classList.add('hidden'));
 
-      if (!docSnap.exists() || !docSnap.data().items || docSnap.data().items.length === 0) {
-        alert("לא נמצאה קנייה קודמת שמורה עבור סניף זה.");
-        return;
+  function renderCategoryOrderList() {
+    catOrderList.innerHTML = '';
+    categoryOrder.forEach((cat, idx) => {
+      const li = document.createElement('li');
+      li.className = 'cat-order-item';
+      li.innerHTML = `
+        <span>${idx + 1}. ${cat}</span>
+        <div>
+          <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, -1)">⬆️</button>
+          <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, 1)">⬇️</button>
+        </div>
+      `;
+      catOrderList.appendChild(li);
+    });
+  }
+
+  window.moveCat = (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= categoryOrder.length) return;
+    const temp = categoryOrder[index];
+    categoryOrder[index] = categoryOrder[target];
+    categoryOrder[target] = temp;
+    renderCategoryOrderList();
+  };
+
+  catOrderSaveBtn.addEventListener('click', async () => {
+    if (currentUser && currentStore) {
+      await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "config", "categoryOrder"), {
+        order: categoryOrder
+      });
+      renderListByCategories();
+    }
+    catOrderModal.classList.add('hidden');
+  });
+
+  clearCompletedBtn.addEventListener('click', async () => {
+    const completed = currentItems.filter(i => i.completed);
+    if (!completed.length) return alert("אין מוצרים מסומנים למחיקה.");
+    
+    if (confirm(`לסיים קנייה ולמחוק ${completed.length} מוצרים?`)) {
+      for (const item of completed) {
+        await deleteDoc(doc(db, "activeList", item.id));
       }
-
-      const lastItems = docSnap.data().items;
-
-      const existingNames = currentItems.map(item => item.name);
-      const itemsToAdd = lastItems.filter(name => !existingNames.includes(name));
-
-      if (itemsToAdd.length === 0) {
-        alert("כל המוצרים מהקנייה האחרונה כבר קיימים ברשימה.");
-        return;
-      }
-
-      for (const itemName of itemsToAdd) {
-        await addDoc(collection(db, "activeList"), {
-          name: itemName,
-          completed: false,
-          userId: currentUser.uid
-        });
-      }
-
-      alert(`נוספו ${itemsToAdd.length} מוצרים מהקנייה האחרונה!`);
-    } catch (error) {
-      console.error("שגיאה בטעינת הקנייה האחרונה:", error);
-      alert("התרחשה שגיאה בטעינת המוצרים.");
     }
   });
 
@@ -603,4 +485,3 @@
 
 </body>
 </html>
-
