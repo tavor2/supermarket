@@ -68,7 +68,10 @@
     .collapsible-box { background: #f0f4f1; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; font-size: 13px; }
     .collapsible-box.active { display: block; }
 
-    .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 15px; cursor: pointer; font-weight: bold; }
+    .action-btn-group { display: flex; gap: 8px; margin-top: 15px; }
+    .action-btn-group button { flex: 1; font-size: 13px; font-weight: bold; }
+
+    .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); cursor: pointer; }
     .clear-btn:hover { background-color: #ffebee; }
     .hidden { display: none !important; }
 
@@ -116,7 +119,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -158,7 +161,10 @@
 
     <div id="shoppingListContainer"></div>
 
-    <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מוצרים שנסמנו)</button>
+    <div class="action-btn-group">
+      <button id="keepOnlyCheckedBtn" class="btn-primary" style="margin-top: 0;">🚀 יציאה לסופר (השאר רק מסומנים)</button>
+      <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מסומנים)</button>
+    </div>
   </div>
 </div>
 
@@ -272,6 +278,7 @@
   const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
   const shoppingListContainer = document.getElementById('shoppingListContainer');
+  const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
 
   const editModal = document.getElementById('editModal');
@@ -339,7 +346,6 @@
           await deleteDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id));
         }
 
-        // סינון כפילויות פנימי ברשימה הנוכחית לפני שמירה
         const uniqueItemsMap = new Map();
         for (const item of currentItems) {
           const key = item.name.trim().toLowerCase();
@@ -376,7 +382,6 @@
       }
 
       if (confirm("האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)")) {
-        // יצירת Set של שמות המוצרים הקיימים כרגע ברשימה למניעת כפילויות
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
         let addedCount = 0;
 
@@ -611,7 +616,6 @@
     const category = itemCategorySelect.value;
     if (!text || !householdId) return;
 
-    // מניעת הוספה ידנית של כפילות לרשימה הפעילה
     const exists = currentItems.some(i => i.name.trim().toLowerCase() === text.toLowerCase());
     if (exists) {
       alert("מוצר זה כבר קיים ברשימה הקנייה שלך.");
@@ -694,6 +698,29 @@
     catOrderModal.classList.add('hidden');
   });
 
+  // --- יציאה לסופר: שמירת המסומנים ומחיקת הבלתי מסומנים ---
+  keepOnlyCheckedBtn.addEventListener('click', async () => {
+    const uncompleted = currentItems.filter(i => !i.completed);
+    const completed = currentItems.filter(i => i.completed);
+
+    if (!completed.length) {
+      return alert("לא סומנו מוצרים חסרים. סמן ב-V את המוצרים שברצונך לקנות.");
+    }
+
+    if (confirm(`להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו, וישארו ${completed.length} מוצרים לקנייה.`)) {
+      // 1. מחיקת כל המוצרים שלא סומנו
+      for (const item of uncompleted) {
+        await deleteDoc(doc(db, "activeList", item.id));
+      }
+
+      // 2. איפוס הסימון (V) למוצרים שנשארו, כדי שיהיה אפשר לסמן אותם מחדש במהלך הקנייה
+      for (const item of completed) {
+        await updateDoc(doc(db, "activeList", item.id), { completed: false });
+      }
+    }
+  });
+
+  // --- סיום קנייה: מחיקת פריטים שסומנו ---
   clearCompletedBtn.addEventListener('click', async () => {
     const completed = currentItems.filter(i => i.completed);
     if (!completed.length) return alert("אין מוצרים מסומנים למחיקה.");
