@@ -316,9 +316,10 @@
 
   function renderList(items) {
     shoppingList.innerHTML = '';
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const li = document.createElement('li');
-      li.dataset.index = index;
+      li.dataset.id = item.id;
+      li.dataset.name = item.name;
       if (item.completed) li.classList.add('checked');
 
       const hasOrder = storeLayout[item.name] !== undefined;
@@ -387,17 +388,27 @@
 
   async function saveNewOrderFromDOM() {
     const listItems = Array.from(shoppingList.children);
-    for (let index = 0; index < listItems.length; index++) {
-      const itemNode = listItems[index];
-      const itemIndex = itemNode.dataset.index;
-      const item = currentItems[itemIndex];
-      const newOrder = index + 1;
-
-      if (item) {
-        await setDoc(doc(db, "users", currentUser.uid, "stores", currentStore, "layout", item.name), { order: newOrder });
-        storeLayout[item.name] = newOrder;
+    
+    // עדכון מיידי של המערך בלוקאל
+    listItems.forEach((itemNode, index) => {
+      const itemName = itemNode.dataset.name;
+      if (itemName) {
+        storeLayout[itemName] = index + 1;
       }
-    }
+    });
+
+    // שמירה ב-Firestore
+    const promises = listItems.map((itemNode, index) => {
+      const itemName = itemNode.dataset.name;
+      if (itemName) {
+        return setDoc(
+          doc(db, "users", currentUser.uid, "stores", currentStore, "layout", itemName), 
+          { order: index + 1 }
+        );
+      }
+    });
+
+    await Promise.all(promises);
   }
 
   addBtn.addEventListener('click', async () => {
