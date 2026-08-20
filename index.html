@@ -462,7 +462,7 @@
       return;
     }
 
-    const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית כמאגר קבוע?");
+    const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית (כולל מצב ה-V של המוצרים) כמאגר קבוע?");
     if (isConfirmed) {
       showLoading("שומר את המוצרים למאגר הקבוע...");
       try {
@@ -478,7 +478,8 @@
           if (!uniqueItemsMap.has(key)) {
             uniqueItemsMap.set(key, {
               name: item.name.trim(),
-              category: item.category || "כללי"
+              category: item.category || "כללי",
+              completed: item.completed || false
             });
           }
         }
@@ -487,7 +488,7 @@
           await addDoc(catalogRef, item);
         }
         hideLoading();
-        await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים)`, false);
+        await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים עם מצב הסימון שלהם)`, false);
       } catch (err) {
         hideLoading();
         console.error(err);
@@ -508,7 +509,7 @@
         return;
       }
 
-      const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)");
+      const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות? (מצב ה-V של המוצרים ייטען כפי שנשמר)");
       if (isConfirmed) {
         showLoading("קורא מתוך המאגר הקבוע ומעדכן את רשימת הקניות...");
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
@@ -522,7 +523,7 @@
             await addDoc(collection(db, "activeList"), {
               name: catItem.name,
               category: catItem.category,
-              completed: false,
+              completed: catItem.completed || false,
               householdId: householdId,
               createdBy: currentUser.uid
             });
