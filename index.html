@@ -246,7 +246,7 @@
 <!-- רכיב טעינה (שעון חול + הודעה ברקע) -->
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="hourglass-icon">⏳</div>
-  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא המתן...</div>
+  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא المתן...</div>
 </div>
 
 <!-- מודאל אישור מותאם אישית -->
@@ -691,18 +691,36 @@
       const isDefault = defaultCategories.includes(cat);
       const li = document.createElement('li');
       li.className = 'cat-order-item';
-      li.innerHTML = `
-        <span>${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}</span>
-        <div>
-          <button type="button" class="edit-btn" style="width:auto; padding: 4px 8px;" onclick="editCategoryPrompt('${cat}')">✏️</button>
-          <button type="button" class="delete-btn" style="width:auto; padding: 4px 8px;" onclick="deleteCategoryPrompt('${cat}')">🗑️</button>
-        </div>
-      `;
+      
+      const span = document.createElement('span');
+      span.innerHTML = `${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}`;
+      
+      const btnGroup = document.createElement('div');
+      
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'edit-btn';
+      editBtn.style.cssText = 'width:auto; padding: 4px 8px;';
+      editBtn.textContent = '✏️';
+      editBtn.addEventListener('click', () => handleEditCategory(cat));
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.style.cssText = 'width:auto; padding: 4px 8px;';
+      deleteBtn.textContent = '🗑️';
+      deleteBtn.addEventListener('click', () => handleDeleteCategory(cat));
+
+      btnGroup.appendChild(editBtn);
+      btnGroup.appendChild(deleteBtn);
+
+      li.appendChild(span);
+      li.appendChild(btnGroup);
       manageCategoriesList.appendChild(li);
     });
   }
 
-  window.editCategoryPrompt = async (oldName) => {
+  async function handleEditCategory(oldName) {
     const newName = prompt("הכנס שם קטגוריה חדש:", oldName);
     if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
 
@@ -710,23 +728,19 @@
     showLoading("מעדכן את שם הקטגוריה...");
 
     try {
-      // 1. עדכון במסד הקטגוריות הגלובלי (אם אינה ברירת מחדל)
       const docObj = globalCatDocs.find(d => d.name === oldName);
       if (docObj) {
         await updateDoc(doc(db, "globalCategories", docObj.id), { name: trimmedNewName });
       } else {
-        // אם זו קטגוריית ברירת מחדל, נוסיף אותה כקטגוריה גלובלית חדשה
         await addDoc(collection(db, "globalCategories"), { name: trimmedNewName });
       }
 
-      // 2. עדכון פריטים ברשימה האקטיבית
       const activeQ = query(collection(db, "activeList"), where("category", "==", oldName));
       const activeSnap = await getDocs(activeQ);
       for (const docSnap of activeSnap.docs) {
         await updateDoc(doc(db, "activeList", docSnap.id), { category: trimmedNewName });
       }
 
-      // 3. עדכון פריטים במאגר הקבוע
       if (householdId) {
         const masterRef = collection(db, "households", householdId, "masterCatalog");
         const masterQ = query(masterRef, where("category", "==", oldName));
@@ -743,29 +757,26 @@
       console.error(err);
       await showCustomConfirm("שגיאה", "שגיאה בעדכון הקטגוריה.", false);
     }
-  };
+  }
 
-  window.deleteCategoryPrompt = async (catName) => {
+  async function handleDeleteCategory(catName) {
     const confirmDelete = await showCustomConfirm("מחיקת קטגוריה", `האם למחוק את הקטגוריה "${catName}"? מוצרים המשויכים אליה יועברו לקטגוריה "כללי".`);
     if (!confirmDelete) return;
 
     showLoading("מוחק את הקטגוריה ומעדכן מוצרים...");
 
     try {
-      // 1. מחיקה מ-globalCategories אם קיים
       const docObj = globalCatDocs.find(d => d.name === catName);
       if (docObj) {
         await deleteDoc(doc(db, "globalCategories", docObj.id));
       }
 
-      // 2. עדכון פריטים פעילים ל-"כללי"
       const activeQ = query(collection(db, "activeList"), where("category", "==", catName));
       const activeSnap = await getDocs(activeQ);
       for (const docSnap of activeSnap.docs) {
         await updateDoc(doc(db, "activeList", docSnap.id), { category: "כללי" });
       }
 
-      // 3. עדכון פריטים במאגר הקבוע ל-"כללי"
       if (householdId) {
         const masterRef = collection(db, "households", householdId, "masterCatalog");
         const masterQ = query(masterRef, where("category", "==", catName));
@@ -775,7 +786,6 @@
         }
       }
 
-      // 4. עדכון הרשימה המקומית
       allCategories = allCategories.filter(c => c !== catName);
       populateCategoryDropdowns();
       
@@ -786,7 +796,7 @@
       console.error(err);
       await showCustomConfirm("שגיאה", "שגיאה במחיקת הקטגוריה.", false);
     }
-  };
+  }
 
   async function loadStores() {
     const storesRef = collection(db, "storeList");
@@ -887,7 +897,6 @@
 
     categoryOrder.forEach(cat => {
       if (grouped[cat] && grouped[cat].length > 0) {
-        // מיון הפריטים אלפבתית לפי א'-ב' בעברית בתוך כל קטגוריה
         grouped[cat].sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
         const catHeader = document.createElement('div');
