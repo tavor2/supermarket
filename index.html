@@ -303,7 +303,7 @@
   const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
 
-  const searchInput = document.getElementById('searchInput'); // שדה הקישור לחיפוש
+  const searchInput = document.getElementById('searchInput');
 
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
@@ -590,12 +590,10 @@
     });
   }
 
-  // סינון ורינדור הרשימה
   function renderListByCategories() {
     shoppingListContainer.innerHTML = '';
     const searchTerm = searchInput.value.trim().toLowerCase();
 
-    // סינון פריטים לפי מונח החיפוש
     const filteredItems = currentItems.filter(item => 
       item.name.toLowerCase().includes(searchTerm)
     );
@@ -649,7 +647,6 @@
     });
   }
 
-  // האזנה להקלדה בשדה החיפוש
   searchInput.addEventListener('input', () => {
     renderListByCategories();
   });
@@ -709,7 +706,7 @@
   function renderCategoryOrderList() {
     catOrderList.innerHTML = '';
     categoryOrder.forEach((cat, idx) => {
-      const li = document.className = 'cat-order-item';
+      const li = document.createElement('li');
       li.className = 'cat-order-item';
       li.innerHTML = `
         <span>${idx + 1}. ${cat}</span>
