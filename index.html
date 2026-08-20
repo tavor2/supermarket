@@ -179,7 +179,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -568,7 +568,7 @@
     if (!currentUser || !householdId) return;
 
     try {
-      showLoading("משייך את המוצרים הקיימים לרשימה המשותפת...");
+      showLoading("משייך את המוצרים הקיימים לרשימה المשותפת...");
       const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
       const snapshot = await getDocs(q);
 
@@ -750,6 +750,9 @@
 
     categoryOrder.forEach(cat => {
       if (grouped[cat] && grouped[cat].length > 0) {
+        // מיון הפריטים אלפבתית לפי א'-ב' בעברית בתוך כל קטגוריה
+        grouped[cat].sort((a, b) => a.name.localeCompare(b.name, 'he'));
+
         const catHeader = document.createElement('div');
         catHeader.className = 'category-header';
         catHeader.innerHTML = `<span>📂 ${cat}</span><span>(${grouped[cat].length})</span>`;
