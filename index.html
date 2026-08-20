@@ -37,6 +37,25 @@
     .input-group select { flex: 1.5; }
     .input-group button { flex: 1; margin-top: 0; white-space: nowrap; }
     
+    /* עיצוב שדה חיפוש */
+    .search-box {
+      position: relative;
+      margin-bottom: 15px;
+    }
+    .search-box input {
+      padding-right: 36px;
+      background-color: #fff;
+      border: 1px solid #2e7d32;
+    }
+    .search-box .search-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
     .category-header {
       background: #e8f5e9;
       color: var(--primary);
@@ -119,7 +138,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -158,6 +177,12 @@
     </div>
 
     <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר (קטגוריות)</button>
+
+    <!-- שדה חיפוש פריט -->
+    <div class="search-box" style="margin-top: 15px;">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="חפש פריט ברשימה...">
+    </div>
 
     <div id="shoppingListContainer"></div>
 
@@ -277,6 +302,9 @@
   const itemInput = document.getElementById('itemInput');
   const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
+
+  const searchInput = document.getElementById('searchInput'); // שדה הקישור לחיפוש
+
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
   const clearCompletedBtn = document.getElementById('clearCompletedBtn');
@@ -330,7 +358,6 @@
     myHouseholdIdDisplay.textContent = householdId;
   }
 
-  // --- שמירה למאגר הקבוע (חסינת כפילויות) ---
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
     if (currentItems.length === 0) {
@@ -368,7 +395,6 @@
     }
   });
 
-  // --- טעינה מהמאגר הקבוע (חסינת כפילויות) ---
   loadMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
 
@@ -564,11 +590,23 @@
     });
   }
 
+  // סינון ורינדור הרשימה
   function renderListByCategories() {
     shoppingListContainer.innerHTML = '';
+    const searchTerm = searchInput.value.trim().toLowerCase();
+
+    // סינון פריטים לפי מונח החיפוש
+    const filteredItems = currentItems.filter(item => 
+      item.name.toLowerCase().includes(searchTerm)
+    );
+
+    if (filteredItems.length === 0) {
+      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchTerm ? 'לא נמצאו מוצרים התואמים לחיפוש' : 'הרשימה ריקה'}</div>`;
+      return;
+    }
 
     const grouped = {};
-    currentItems.forEach(item => {
+    filteredItems.forEach(item => {
       const cat = item.category || "כללי";
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
@@ -610,6 +648,11 @@
       }
     });
   }
+
+  // האזנה להקלדה בשדה החיפוש
+  searchInput.addEventListener('input', () => {
+    renderListByCategories();
+  });
 
   addBtn.addEventListener('click', async () => {
     const text = itemInput.value.trim();
@@ -666,7 +709,7 @@
   function renderCategoryOrderList() {
     catOrderList.innerHTML = '';
     categoryOrder.forEach((cat, idx) => {
-      const li = document.createElement('li');
+      const li = document.className = 'cat-order-item';
       li.className = 'cat-order-item';
       li.innerHTML = `
         <span>${idx + 1}. ${cat}</span>
@@ -698,7 +741,6 @@
     catOrderModal.classList.add('hidden');
   });
 
-  // --- יציאה לסופר: שמירת המסומנים ומחיקת הבלתי מסומנים ---
   keepOnlyCheckedBtn.addEventListener('click', async () => {
     const uncompleted = currentItems.filter(i => !i.completed);
     const completed = currentItems.filter(i => i.completed);
@@ -708,19 +750,16 @@
     }
 
     if (confirm(`להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו, וישארו ${completed.length} מוצרים לקנייה.`)) {
-      // 1. מחיקת כל המוצרים שלא סומנו
       for (const item of uncompleted) {
         await deleteDoc(doc(db, "activeList", item.id));
       }
 
-      // 2. איפוס הסימון (V) למוצרים שנשארו, כדי שיהיה אפשר לסמן אותם מחדש במהלך הקנייה
       for (const item of completed) {
         await updateDoc(doc(db, "activeList", item.id), { completed: false });
       }
     }
   });
 
-  // --- סיום קנייה: מחיקת פריטים שסומנו ---
   clearCompletedBtn.addEventListener('click', async () => {
     const completed = currentItems.filter(i => i.completed);
     if (!completed.length) return alert("אין מוצרים מסומנים למחיקה.");
