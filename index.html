@@ -37,10 +37,21 @@
     .input-group select { flex: 1.5; }
     .input-group button { flex: 1; margin-top: 0; white-space: nowrap; }
     
-    /* עיצוב שדה חיפוש */
+    /* עיצוב שורת סינון וחיפוש */
+    .filter-container {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+    .filter-container select {
+      flex: 1.2;
+      border: 1px solid #2e7d32;
+      background-color: #fff;
+    }
     .search-box {
       position: relative;
-      margin-bottom: 15px;
+      flex: 2;
     }
     .search-box input {
       padding-right: 36px;
@@ -168,7 +179,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -208,10 +219,15 @@
 
     <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר (קטגוריות)</button>
 
-    <!-- שדה חיפוש פריט -->
-    <div class="search-box" style="margin-top: 15px;">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="חפש פריט ברשימה...">
+    <!-- אזור חיפוש וסינון קטגוריה -->
+    <div class="filter-container">
+      <select id="categoryFilterSelect">
+        <option value="ALL">כל הקטגוריות</option>
+      </select>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="חפש פריט...">
+      </div>
     </div>
 
     <div id="shoppingListContainer"></div>
@@ -229,7 +245,7 @@
   <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא המתן...</div>
 </div>
 
-<!-- מודאל אישור מותאם אישית (מחליף את confirm/alert) -->
+<!-- מודאל אישור מותאם אישית -->
 <div id="confirmModal" class="modal-overlay hidden">
   <div class="modal-box">
     <h3 id="confirmModalTitle">אישור action</h3>
@@ -352,6 +368,7 @@
   const addBtn = document.getElementById('addBtn');
 
   const searchInput = document.getElementById('searchInput');
+  const categoryFilterSelect = document.getElementById('categoryFilterSelect');
 
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
@@ -389,7 +406,6 @@
     loadingOverlay.classList.add('hidden');
   }
 
-  // פונקציית אישור מותאמת אישית המחליפה את confirm ופותרת את בעיית ה-GitHub
   function showCustomConfirm(title, text, showCancel = true) {
     return new Promise((resolve) => {
       confirmModalTitle.textContent = title;
@@ -606,12 +622,19 @@
   }
 
   function populateCategoryDropdowns() {
+    const selectedFilter = categoryFilterSelect.value;
+    
     itemCategorySelect.innerHTML = '';
     editModalCategorySelect.innerHTML = '';
+    categoryFilterSelect.innerHTML = '<option value="ALL">כל הקטגוריות</option>';
+
     allCategories.forEach(cat => {
       itemCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
       editModalCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      categoryFilterSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
+
+    categoryFilterSelect.value = selectedFilter || "ALL";
   }
 
   toggleCategoryForm.addEventListener('click', () => categoryForm.classList.toggle('active'));
@@ -704,13 +727,17 @@
   function renderListByCategories() {
     shoppingListContainer.innerHTML = '';
     const searchTerm = searchInput.value.trim().toLowerCase();
+    const selectedCategory = categoryFilterSelect.value;
 
-    const filteredItems = currentItems.filter(item => 
-      item.name.toLowerCase().includes(searchTerm)
-    );
+    const filteredItems = currentItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm);
+      const itemCategory = item.category || "כללי";
+      const matchesCategory = selectedCategory === "ALL" || itemCategory === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
 
     if (filteredItems.length === 0) {
-      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchTerm ? 'לא נמצאו מוצרים התואמים לחיפוש' : 'הרשימה ריקה'}</div>`;
+      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchTerm || selectedCategory !== 'ALL' ? 'לא נמצאו מוצרים התואמים לסינון' : 'הרשימה ריקה'}</div>`;
       return;
     }
 
@@ -759,6 +786,10 @@
   }
 
   searchInput.addEventListener('input', () => {
+    renderListByCategories();
+  });
+
+  categoryFilterSelect.addEventListener('change', () => {
     renderListByCategories();
   });
 
