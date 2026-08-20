@@ -193,6 +193,18 @@
   </div>
 </div>
 
+<!-- מודאל אישור מותאם אישית (מחליף את confirm/alert) -->
+<div id="confirmModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="confirmModalTitle">אישור action</h3>
+    <p id="confirmModalText" style="font-size: 14px; color: #444; margin-bottom: 20px;"></p>
+    <div class="modal-actions">
+      <button id="confirmModalConfirmBtn" class="btn-primary">אישור</button>
+      <button id="confirmModalCancelBtn" class="btn-cancel">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <!-- מודאל עריכת מוצר -->
 <div id="editModal" class="modal-overlay hidden">
   <div class="modal-box">
@@ -321,6 +333,42 @@
   const catOrderSaveBtn = document.getElementById('catOrderSaveBtn');
   const catOrderCancelBtn = document.getElementById('catOrderCancelBtn');
 
+  // Confirm Modal DOM Elements
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmModalTitle = document.getElementById('confirmModalTitle');
+  const confirmModalText = document.getElementById('confirmModalText');
+  const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
+  const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
+
+  // פונקציית אישור מותאמת אישית המחליפה את confirm ופותרת את בעיית ה-GitHub
+  function showCustomConfirm(title, text, showCancel = true) {
+    return new Promise((resolve) => {
+      confirmModalTitle.textContent = title;
+      confirmModalText.textContent = text;
+      confirmModalCancelBtn.style.display = showCancel ? 'block' : 'none';
+      confirmModal.classList.remove('hidden');
+
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      const cleanup = () => {
+        confirmModal.classList.add('hidden');
+        confirmModalConfirmBtn.removeEventListener('click', handleConfirm);
+        confirmModalCancelBtn.removeEventListener('click', handleCancel);
+      };
+
+      confirmModalConfirmBtn.addEventListener('click', handleConfirm);
+      confirmModalCancelBtn.addEventListener('click', handleCancel);
+    });
+  }
+
   googleLoginBtn.addEventListener('click', () => signInWithPopup(auth, googleProvider));
   logoutBtn.addEventListener('click', () => signOut(auth));
 
@@ -361,11 +409,12 @@
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
     if (currentItems.length === 0) {
-      alert("הרשימה הנוכחית ריקה. הוסף מוצרים לפני השמירה כמאגר קבוע.");
+      await showCustomConfirm("הודעה", "הרשימה הנוכחית ריקה. הוסף מוצרים לפני השמירה כמאגר קבוע.", false);
       return;
     }
 
-    if (confirm(`האם לשמור את הרשימה הנוכחית כמאגר קבוע?`)) {
+    const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית כמאגר קבוע?");
+    if (isConfirmed) {
       try {
         const catalogRef = collection(db, "households", householdId, "masterCatalog");
         const existingDocs = await getDocs(catalogRef);
@@ -387,10 +436,10 @@
         for (const item of uniqueItemsMap.values()) {
           await addDoc(catalogRef, item);
         }
-        alert(`המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים)`);
+        await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים)`, false);
       } catch (err) {
         console.error(err);
-        alert("שגיאה בשמירת המאגר.");
+        await showCustomConfirm("שגיאה", "שגיאה בשמירת המאגר.", false);
       }
     }
   });
@@ -403,11 +452,12 @@
       const catalogSnapshot = await getDocs(catalogRef);
 
       if (catalogSnapshot.empty) {
-        alert("לא נמצא מאגר קבוע שמור. השתמש בכפתור השמירה כדי ליצור אחד.");
+        await showCustomConfirm("הודעה", "לא נמצא מאגר קבוע שמור. השתמש בכפתור השמירה כדי ליצור אחד.", false);
         return;
       }
 
-      if (confirm("האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)")) {
+      const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)");
+      if (isConfirmed) {
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
         let addedCount = 0;
 
@@ -429,14 +479,14 @@
         }
 
         if (addedCount > 0) {
-          alert(`נטענו ${addedCount} מוצרים חדשים מהמאגר הקבוע!`);
+          await showCustomConfirm("הצלחה", `נטענו ${addedCount} מוצרים חדשים מהמאגר הקבוע!`, false);
         } else {
-          alert("כל המוצרים מהמאגר הקבוע כבר קיימים ברשימה הנוכחית.");
+          await showCustomConfirm("הודעה", "כל המוצרים מהמאגר הקבוע כבר קיימים ברשימה הנוכחית.", false);
         }
       }
     } catch (err) {
       console.error(err);
-      alert("שגיאה בטעינת המאגר.");
+      await showCustomConfirm("שגיאה", "שגיאה בטעינת המאגר.", false);
     }
   });
 
@@ -450,7 +500,7 @@
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        alert("לא נמצאו מוצרים ישנים לשיוך.");
+        await showCustomConfirm("הודעה", "לא נמצאו מוצרים ישנים לשיוך.", false);
         return;
       }
 
@@ -462,11 +512,11 @@
         updatedCount++;
       }
 
-      alert(`בהצלחה! ${updatedCount} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`);
+      await showCustomConfirm("הצלחה", `בהצלחה! ${updatedCount} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
       shareForm.classList.remove('active');
     } catch (err) {
       console.error(err);
-      alert("אירעה שגיאה במיזוג המוצרים.");
+      await showCustomConfirm("שגיאה", "אירעה שגיאה במיזוג המוצרים.", false);
     }
   });
 
@@ -474,7 +524,8 @@
     const targetCode = targetHouseholdInput.value.trim();
     if (!targetCode) return;
 
-    if (confirm("האם ברצונך להתחבר לרשימה זו? כל המוצרים שתראה מכאן ואילך יהיו משותפים.")) {
+    const isConfirmed = await showCustomConfirm("חיבור לרשימה", "האם ברצונך להתחבר לרשימה זו? כל המוצרים שתראה מכאן ואילך יהיו משותפים.");
+    if (isConfirmed) {
       householdId = targetCode;
       await setDoc(doc(db, "users", currentUser.uid), { householdId: householdId }, { merge: true });
       myHouseholdIdDisplay.textContent = householdId;
@@ -658,7 +709,7 @@
 
     const exists = currentItems.some(i => i.name.trim().toLowerCase() === text.toLowerCase());
     if (exists) {
-      alert("מוצר זה כבר קיים ברשימה הקנייה שלך.");
+      await showCustomConfirm("הודעה", "מוצר זה כבר קיים ברשימה הקנייה שלך.", false);
       return;
     }
 
@@ -743,10 +794,16 @@
     const completed = currentItems.filter(i => i.completed);
 
     if (!completed.length) {
-      return alert("לא סומנו מוצרים חסרים. סמן ב-V את המוצרים שברצונך לקנות.");
+      await showCustomConfirm("הודעה", "לא סומנו מוצרים חסרים. סמן ב-V את המוצרים שברצונך לקנות.", false);
+      return;
     }
 
-    if (confirm(`להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו, וישארו ${completed.length} מוצרים לקנייה.`)) {
+    const isConfirmed = await showCustomConfirm(
+      "יציאה לסופר", 
+      `להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו, וישארו ${completed.length} מוצרים לקנייה.`
+    );
+
+    if (isConfirmed) {
       for (const item of uncompleted) {
         await deleteDoc(doc(db, "activeList", item.id));
       }
@@ -759,9 +816,17 @@
 
   clearCompletedBtn.addEventListener('click', async () => {
     const completed = currentItems.filter(i => i.completed);
-    if (!completed.length) return alert("אין מוצרים מסומנים למחיקה.");
+    if (!completed.length) {
+      await showCustomConfirm("הודעה", "אין מוצרים מסומנים למחיקה.", false);
+      return;
+    }
     
-    if (confirm(`לסיים קנייה ולמחוק ${completed.length} מוצרים?`)) {
+    const isConfirmed = await showCustomConfirm(
+      "סיום קנייה", 
+      `לסיים קנייה ולמחוק ${completed.length} מוצרים?`
+    );
+
+    if (isConfirmed) {
       for (const item of completed) {
         await deleteDoc(doc(db, "activeList", item.id));
       }
