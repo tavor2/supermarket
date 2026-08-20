@@ -106,6 +106,36 @@
 
     .cat-order-list { list-style: none; padding: 0; margin: 10px 0; }
     .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* שעון חול / שכבת טעינה ברקע */
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      color: #fff;
+      text-align: center;
+    }
+    .hourglass-icon {
+      font-size: 50px;
+      animation: spinHourglass 2s infinite ease-in-out;
+      margin-bottom: 15px;
+    }
+    @keyframes spinHourglass {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(180deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-text {
+      font-size: 16px;
+      font-weight: bold;
+      max-width: 80%;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -191,6 +221,12 @@
       <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מסומנים)</button>
     </div>
   </div>
+</div>
+
+<!-- רכיב טעינה (שעון חול + הודעה ברקע) -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="hourglass-icon">⏳</div>
+  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא המתן...</div>
 </div>
 
 <!-- מודאל אישור מותאם אישית (מחליף את confirm/alert) -->
@@ -340,6 +376,19 @@
   const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
   const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
 
+  // Loading Overlay DOM Elements
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+
+  function showLoading(message) {
+    loadingText.textContent = message;
+    loadingOverlay.classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    loadingOverlay.classList.add('hidden');
+  }
+
   // פונקציית אישור מותאמת אישית המחליפה את confirm ופותרת את בעיית ה-GitHub
   function showCustomConfirm(title, text, showCancel = true) {
     return new Promise((resolve) => {
@@ -415,6 +464,7 @@
 
     const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית כמאגר קבוע?");
     if (isConfirmed) {
+      showLoading("שומר את המוצרים למאגר הקבוע...");
       try {
         const catalogRef = collection(db, "households", householdId, "masterCatalog");
         const existingDocs = await getDocs(catalogRef);
@@ -436,8 +486,10 @@
         for (const item of uniqueItemsMap.values()) {
           await addDoc(catalogRef, item);
         }
+        hideLoading();
         await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים)`, false);
       } catch (err) {
+        hideLoading();
         console.error(err);
         await showCustomConfirm("שגיאה", "שגיאה בשמירת המאגר.", false);
       }
@@ -458,6 +510,7 @@
 
       const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות? (מוצרים שכבר קיימים ברשימה לא יוכפלו)");
       if (isConfirmed) {
+        showLoading("קורא מתוך המאגר הקבוע ומעדכן את רשימת הקניות...");
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
         let addedCount = 0;
 
@@ -478,6 +531,7 @@
           }
         }
 
+        hideLoading();
         if (addedCount > 0) {
           await showCustomConfirm("הצלחה", `נטענו ${addedCount} מוצרים חדשים מהמאגר הקבוע!`, false);
         } else {
@@ -485,6 +539,7 @@
         }
       }
     } catch (err) {
+      hideLoading();
       console.error(err);
       await showCustomConfirm("שגיאה", "שגיאה בטעינת המאגר.", false);
     }
@@ -496,10 +551,12 @@
     if (!currentUser || !householdId) return;
 
     try {
+      showLoading("משייך את המוצרים הקיימים לרשימה המשותפת...");
       const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
+        hideLoading();
         await showCustomConfirm("הודעה", "לא נמצאו מוצרים ישנים לשיוך.", false);
         return;
       }
@@ -512,9 +569,11 @@
         updatedCount++;
       }
 
+      hideLoading();
       await showCustomConfirm("הצלחה", `בהצלחה! ${updatedCount} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
       shareForm.classList.remove('active');
     } catch (err) {
+      hideLoading();
       console.error(err);
       await showCustomConfirm("שגיאה", "אירעה שגיאה במיזוג המוצרים.", false);
     }
@@ -804,12 +863,19 @@
     );
 
     if (isConfirmed) {
-      for (const item of uncompleted) {
-        await deleteDoc(doc(db, "activeList", item.id));
-      }
+      showLoading("מוחק מוצרים שלא סומנו ומכין את הרשימה לקנייה בסופר...");
+      try {
+        for (const item of uncompleted) {
+          await deleteDoc(doc(db, "activeList", item.id));
+        }
 
-      for (const item of completed) {
-        await updateDoc(doc(db, "activeList", item.id), { completed: false });
+        for (const item of completed) {
+          await updateDoc(doc(db, "activeList", item.id), { completed: false });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        hideLoading();
       }
     }
   });
@@ -827,8 +893,15 @@
     );
 
     if (isConfirmed) {
-      for (const item of completed) {
-        await deleteDoc(doc(db, "activeList", item.id));
+      showLoading("מוחק את המוצרים המסומנים ומסיים את הקנייה...");
+      try {
+        for (const item of completed) {
+          await deleteDoc(doc(db, "activeList", item.id));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        hideLoading();
       }
     }
   });
