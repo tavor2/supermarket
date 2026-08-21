@@ -587,17 +587,25 @@
     }
   });
 
-  // זיהוי דיבור מואץ (Speech Recognition) להוספת מוצר ולחיפוש מוצר
+  // זיהוי דיבור (Speech Recognition) להוספת מוצר ולחיפוש מוצר
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    // זיהוי דיבור להוספת מוצר
+    // פונקציית עזר לשחרור כפתור
+    const resetMicButton = (btn, originalBg = '#fff') => {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.background = originalBg;
+    };
+
+    // --- זיהוי דיבור להוספת מוצר ---
     const addItemRecognition = new SpeechRecognition();
     addItemRecognition.lang = 'he-IL';
     addItemRecognition.continuous = false;
     addItemRecognition.interimResults = true;
 
     micBtn.addEventListener('click', () => {
+      micBtn.disabled = true;
       micBtn.style.background = '#ffebee';
       addItemRecognition.start();
     });
@@ -613,30 +621,20 @@
 
       if (event.results[0].isFinal) {
         addItemRecognition.stop();
-        micBtn.style.background = '#fff';
+        resetMicButton(micBtn);
       }
     };
 
-    addItemRecognition.onerror = () => { micBtn.style.background = '#fff'; };
-    addItemRecognition.onend = () => { micBtn.style.background = '#fff'; };
+    addItemRecognition.onerror = () => { resetMicButton(micBtn); };
+    addItemRecognition.onend = () => { resetMicButton(micBtn); };
 
-    // זיהוי דיבור לחיפוש מוצר
+    // --- זיהוי דיבור לחיפוש מוצר ---
     const searchRecognition = new SpeechRecognition();
     searchRecognition.lang = 'he-IL';
     searchRecognition.continuous = false;
     searchRecognition.interimResults = true;
 
-    let searchMicTimeout = null;
-
-    // פונקציית איפוס ושחרור מיידי של כפתור החיפוש הקולי
-    const resetSearchMicBtn = () => {
-      if (searchMicTimeout) clearTimeout(searchMicTimeout);
-      searchMicBtn.style.opacity = '1';
-      searchMicBtn.disabled = false;
-    };
-
     searchMicBtn.addEventListener('click', () => {
-      if (searchMicTimeout) clearTimeout(searchMicTimeout);
       searchMicBtn.disabled = true;
       searchMicBtn.style.opacity = '0.5';
       searchRecognition.start();
@@ -653,12 +651,12 @@
 
       if (event.results[0].isFinal) {
         searchRecognition.stop();
+        resetMicButton(searchMicBtn, 'none');
       }
     };
 
-    // שחרור הכפתור מיד בסיום או בשגיאה
-    searchRecognition.onerror = () => { resetSearchMicBtn(); };
-    searchRecognition.onend = () => { resetSearchMicBtn(); };
+    searchRecognition.onerror = () => { resetMicButton(searchMicBtn, 'none'); };
+    searchRecognition.onend = () => { resetMicButton(searchMicBtn, 'none'); };
 
   } else {
     micBtn.style.display = 'none';
