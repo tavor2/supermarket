@@ -637,6 +637,16 @@
         }
       }
       
+      // בדיקה אם נאמרה המילה "סיים"
+      if (transcript.includes('סיים')) {
+        transcript = transcript.replace(/סיים/g, '').trim();
+        itemInput.value = transcript;
+        itemInput.dispatchEvent(new Event('input'));
+        addItemRecognition.stop();
+        releaseMicButtons();
+        return;
+      }
+
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
 
@@ -674,6 +684,16 @@
         if (event.results[i].isFinal) {
           isFinal = true;
         }
+      }
+
+      // בדיקה אם נאמרה המילה "סיים"
+      if (transcript.includes('סיים')) {
+        transcript = transcript.replace(/סיים/g, '').trim();
+        searchInput.value = transcript;
+        searchInput.dispatchEvent(new Event('input'));
+        searchRecognition.stop();
+        releaseMicButtons();
+        return;
       }
       
       searchInput.value = transcript;
