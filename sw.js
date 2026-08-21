@@ -1,10 +1,13 @@
-const CACHE_NAME = 'shopping-list-v1';
+const CACHE_NAME = 'shopping-list-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -32,14 +35,22 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('firestore.googleapis.com') || 
-      event.request.url.includes('identitytoolkit.googleapis.com')) {
+  // דילוג על בקשות של פיירבייס כדי לתת לדרייבר המובנה של פיירבייס לנהל את האופליין בעצמו
+  if (
+    event.request.url.includes('firestore.googleapis.com') || 
+    event.request.url.includes('identitytoolkit.googleapis.com') ||
+    event.request.url.includes('firebase.googleapis.com')
+  ) {
     return;
   }
 
+  // אסטרטגיית Cache First למשאבי האפליקציה הסטטיים
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request);
     })
   );
 });

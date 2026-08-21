@@ -351,6 +351,15 @@
     getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot, writeBatch, enableIndexedDbPersistence 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+  // רישום ה-Service Worker לטעינה באופליין
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker נרשם בהצלחה:', reg.scope))
+        .catch(err => console.error('שגיאה ברישום Service Worker:', err));
+    });
+  }
+
   const firebaseConfig = {
     apiKey: "AIzaSyANk2S3HNmlfdm5gKMCDFrK_RfdCA8haaQ",
     authDomain: "supermarket-e48cd.firebaseapp.com",
@@ -601,15 +610,12 @@
       searchMicBtn.style.background = 'transparent';
     };
 
-    // שחרור כפתורי הקול בלחיצה/פוקוס על תיבת הטקסט להוספה
     itemInput.addEventListener('focus', releaseMicButtons);
     itemInput.addEventListener('click', releaseMicButtons);
 
-    // שחרור כפתורי הקול בלחיצה/פוקוס על תיבת הטקסט לחיפוש
     searchInput.addEventListener('focus', releaseMicButtons);
     searchInput.addEventListener('click', releaseMicButtons);
 
-    // --- זיהוי דיבור להוספת מוצר ---
     const addItemRecognition = new SpeechRecognition();
     addItemRecognition.lang = 'he-IL';
     addItemRecognition.continuous = false;
@@ -637,7 +643,6 @@
         }
       }
       
-      // בדיקה אם נאמרה המילה "סיים"
       if (transcript.includes('סיים')) {
         transcript = transcript.replace(/סיים/g, '').trim();
         itemInput.value = transcript;
@@ -658,7 +663,6 @@
     addItemRecognition.onerror = () => { releaseMicButtons(); };
     addItemRecognition.onend = () => { releaseMicButtons(); };
 
-    // --- זיהוי דיבור לחיפוש מוצר ---
     const searchRecognition = new SpeechRecognition();
     searchRecognition.lang = 'he-IL';
     searchRecognition.continuous = false;
@@ -686,7 +690,6 @@
         }
       }
 
-      // בדיקה אם נאמרה המילה "סיים"
       if (transcript.includes('סיים')) {
         transcript = transcript.replace(/סיים/g, '').trim();
         searchInput.value = transcript;
@@ -1371,4 +1374,3 @@
 
 </body>
 </html>
-
