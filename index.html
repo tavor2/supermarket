@@ -221,7 +221,7 @@
           <button type="button" id="micBtn" class="mic-btn" title="הקלטת מוצר בקול">🎙️</button>
         </div>
         <div class="add-item-row2">
-          <input type="text" id="itemQtyInput" placeholder="כמות / הערה (למשל: 2 ק"ג)">
+          <input type="text" id="itemQtyInput" placeholder="כמות / הערה (למשל: 2 ק&quot;ג)">
           <select id="itemCategorySelect"></select>
           <button id="addBtn" class="btn-primary">הוסף</button>
         </div>
@@ -606,6 +606,48 @@
   } else {
     micBtn.style.display = 'none';
   }
+
+  async function addItemToDatabase() {
+    const text = itemInput.value.trim();
+    const qty = itemQtyInput.value.trim();
+    const category = itemCategorySelect.value;
+    if (!text || !householdId) return;
+
+    const exists = currentItems.some(i => i.name.trim().toLowerCase() === text.toLowerCase());
+    if (exists) {
+      await showCustomConfirm("הודעה", "מוצר זה כבר קיים ברשימה הקנייה שלך.", false);
+      return;
+    }
+
+    await addDoc(collection(db, "activeList"), { 
+      name: text, 
+      qty: qty,
+      category: category,
+      completed: false, 
+      householdId: householdId,
+      createdBy: currentUser.uid
+    });
+
+    itemInput.value = '';
+    itemQtyInput.value = '';
+  }
+
+  // מאזיני אירועים להוספת מוצר בלחיצה או בלחיצה על Enter
+  addBtn.addEventListener('click', addItemToDatabase);
+
+  itemInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addItemToDatabase();
+    }
+  });
+
+  itemQtyInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addItemToDatabase();
+    }
+  });
 
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
@@ -1081,31 +1123,6 @@
 
   categoryFilterSelect.addEventListener('change', () => {
     renderListByCategories();
-  });
-
-  addBtn.addEventListener('click', async () => {
-    const text = itemInput.value.trim();
-    const qty = itemQtyInput.value.trim();
-    const category = itemCategorySelect.value;
-    if (!text || !householdId) return;
-
-    const exists = currentItems.some(i => i.name.trim().toLowerCase() === text.toLowerCase());
-    if (exists) {
-      await showCustomConfirm("הודעה", "מוצר זה כבר קיים ברשימה הקנייה שלך.", false);
-      return;
-    }
-
-    await addDoc(collection(db, "activeList"), { 
-      name: text, 
-      qty: qty,
-      category: category,
-      completed: false, 
-      householdId: householdId,
-      createdBy: currentUser.uid
-    });
-
-    itemInput.value = '';
-    itemQtyInput.value = '';
   });
 
   function openEditModal(item) {
