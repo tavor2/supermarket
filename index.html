@@ -628,20 +628,19 @@
 
     let searchMicTimeout = null;
 
+    // פונקציית איפוס ושחרור מיידי של כפתור החיפוש הקולי
+    const resetSearchMicBtn = () => {
+      if (searchMicTimeout) clearTimeout(searchMicTimeout);
+      searchMicBtn.style.opacity = '1';
+      searchMicBtn.disabled = false;
+    };
+
     searchMicBtn.addEventListener('click', () => {
       if (searchMicTimeout) clearTimeout(searchMicTimeout);
       searchMicBtn.disabled = true;
       searchMicBtn.style.opacity = '0.5';
       searchRecognition.start();
     });
-
-    const resetSearchMicBtn = () => {
-      if (searchMicTimeout) clearTimeout(searchMicTimeout);
-      searchMicTimeout = setTimeout(() => {
-        searchMicBtn.style.opacity = '1';
-        searchMicBtn.disabled = false;
-      }, 2000);
-    };
 
     searchRecognition.onresult = (event) => {
       let transcript = '';
@@ -657,6 +656,7 @@
       }
     };
 
+    // שחרור הכפתור מיד בסיום או בשגיאה
     searchRecognition.onerror = () => { resetSearchMicBtn(); };
     searchRecognition.onend = () => { resetSearchMicBtn(); };
 
