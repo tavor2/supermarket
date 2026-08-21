@@ -601,12 +601,13 @@
       searchMicBtn.style.background = 'transparent';
     };
 
-    // שחרור בלחיצה איפשהו במסך (הוחרגו כפתורי השמע עצמם)
-    document.body.addEventListener('click', (e) => {
-      if (!micBtn.contains(e.target) && !searchMicBtn.contains(e.target)) {
-        releaseMicButtons();
-      }
-    });
+    // שחרור כפתורי הקול בלחיצה/פוקוס על תיבת הטקסט להוספה
+    itemInput.addEventListener('focus', releaseMicButtons);
+    itemInput.addEventListener('click', releaseMicButtons);
+
+    // שחרור כפתורי הקול בלחיצה/פוקוס על תיבת הטקסט לחיפוש
+    searchInput.addEventListener('focus', releaseMicButtons);
+    searchInput.addEventListener('click', releaseMicButtons);
 
     // --- זיהוי דיבור להוספת מוצר ---
     const addItemRecognition = new SpeechRecognition();
@@ -841,7 +842,7 @@
     if (!currentUser || !householdId) return;
 
     try {
-      showLoading("משייך את המוצרים הקיימים לרשימה المשותפת...");
+      showLoading("משייך את המוצרים הקיימים לרשימה המשותפת...");
       const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
       const snapshot = await getDocs(q);
 
@@ -859,7 +860,7 @@
       await batch.commit();
 
       hideLoading();
-      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה المשותפת.`, false);
+      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
       shareForm.classList.remove('active');
     } catch (err) {
       hideLoading();
