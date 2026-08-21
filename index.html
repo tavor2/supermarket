@@ -204,7 +204,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -1316,7 +1316,8 @@
     );
 
     if (isConfirmed) {
-      showLoading("מוחק מוצרים שלא סומנו ומכין את הרשימה לקנייה בסופר...");
+      showLoading("מעדכן את הרשימה לקנייה...");
+
       try {
         const batch = writeBatch(db);
 
@@ -1328,7 +1329,7 @@
           batch.update(doc(db, "activeList", item.id), { completed: false });
         });
 
-        await batch.commit();
+        batch.commit().catch(err => console.log("סנכרון לרשת ייעשה כשתתחבר מחדש:", err));
       } catch (err) {
         console.error(err);
       } finally {
@@ -1374,3 +1375,4 @@
 
 </body>
 </html>
+
