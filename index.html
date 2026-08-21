@@ -572,12 +572,13 @@
     }
   });
 
-  // זיהוי דיבור (Speech Recognition)
+  // זיהוי דיבור מואץ (Speech Recognition)
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = 'he-IL';
     recognition.continuous = false;
+    recognition.interimResults = true; // הצגת תוצאות בזמן אמת
 
     micBtn.addEventListener('click', () => {
       micBtn.style.background = '#ffebee';
@@ -585,10 +586,19 @@
     });
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
-      micBtn.style.background = '#fff';
+
+      // עצירה יזומה ומיידית עם קבלת התוצאה הסופית
+      if (event.results[0].isFinal) {
+        recognition.stop();
+        micBtn.style.background = '#fff';
+      }
     };
 
     recognition.onerror = () => { micBtn.style.background = '#fff'; };
@@ -1240,3 +1250,4 @@
 
 </body>
 </html>
+
