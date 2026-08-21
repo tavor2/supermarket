@@ -587,7 +587,7 @@
     }
   });
 
-  // זיהוי דיבור (Speech Recognition) להוספת מוצר ולחיפוש מוצר (מתוקן + שחרור בלחיצה במסך)
+  // זיהוי דיבור (Speech Recognition) להוספת מוצר ולחיפוש מוצר
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -601,9 +601,9 @@
       searchMicBtn.style.background = 'transparent';
     };
 
-    // שחרור בלחיצה איפשהו במסך
+    // שחרור בלחיצה איפשהו במסך (הוחרגו כפתורי השמע עצמם)
     document.body.addEventListener('click', (e) => {
-      if (e.target !== micBtn && e.target !== searchMicBtn) {
+      if (!micBtn.contains(e.target) && !searchMicBtn.contains(e.target)) {
         releaseMicButtons();
       }
     });
