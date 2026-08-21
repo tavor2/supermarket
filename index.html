@@ -36,6 +36,16 @@
     .input-group input { flex: 2; }
     .input-group select { flex: 1.5; }
     .input-group button { flex: 1; margin-top: 0; white-space: nowrap; }
+
+    /* עיצוב שורת הוספת מוצר מורחבת */
+    .add-item-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+    .add-item-row1 { display: flex; gap: 8px; }
+    .add-item-row1 input { flex: 2; }
+    .add-item-row1 button.mic-btn { width: auto; padding: 0 12px; font-size: 18px; background: #fff; border: 1px solid #ccc; cursor: pointer; }
+    .add-item-row2 { display: flex; gap: 8px; }
+    .add-item-row2 input { flex: 1; }
+    .add-item-row2 select { flex: 1.5; }
+    .add-item-row2 button { flex: 1; margin-top: 0; }
     
     /* עיצוב שורת סינון וחיפוש */
     .filter-container {
@@ -87,7 +97,9 @@
     li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
     .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
     
-    .item-right { display: flex; align-items: center; }
+    .item-right { display: flex; align-items: center; gap: 8px; }
+    .item-details { display: flex; flex-direction: column; }
+    .item-qty { font-size: 12px; color: #666; }
     .item-left { display: flex; align-items: center; gap: 6px; }
 
     .edit-btn, .delete-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
@@ -202,10 +214,17 @@
 
     <div class="field">
       <label for="itemInput">הוסף מוצר לרשימה:</label>
-      <div class="input-group">
-        <input type="text" id="itemInput" placeholder="שם המוצר...">
-        <select id="itemCategorySelect"></select>
-        <button id="addBtn" class="btn-primary">הוסף</button>
+      <div class="add-item-container">
+        <div class="add-item-row1">
+          <input type="text" id="itemInput" placeholder="שם המוצר..." list="masterSuggestions">
+          <datalist id="masterSuggestions"></datalist>
+          <button type="button" id="micBtn" class="mic-btn" title="הקלטת מוצר בקול">🎙️</button>
+        </div>
+        <div class="add-item-row2">
+          <input type="text" id="itemQtyInput" placeholder="כמות / הערה (למשל: 2 ק"ג)">
+          <select id="itemCategorySelect"></select>
+          <button id="addBtn" class="btn-primary">הוסף</button>
+        </div>
       </div>
     </div>
 
@@ -246,7 +265,7 @@
 <!-- רכיב טעינה (שעון חול + הודעה ברקע) -->
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="hourglass-icon">⏳</div>
-  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא المתן...</div>
+  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא המתן...</div>
 </div>
 
 <!-- מודאל אישור מותאם אישית -->
@@ -268,6 +287,10 @@
     <div class="field">
       <label>שם הפריט:</label>
       <input type="text" id="editModalInput">
+    </div>
+    <div class="field">
+      <label>כמות / הערה:</label>
+      <input type="text" id="editModalQtyInput">
     </div>
     <div class="field">
       <label>קטגוריה:</label>
@@ -311,7 +334,7 @@
     getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { 
-    getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot 
+    getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot, writeBatch, enableIndexedDbPersistence 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -327,6 +350,16 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+  // הפעלת תמיכה באופליין עבור Firestore בסופרמרקט
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Persistence failed: Multiple tabs open');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Persistence is not supported by browser');
+    }
+  });
+
   const googleProvider = new GoogleAuthProvider();
 
   const defaultCategories = [
@@ -341,11 +374,27 @@
     "כללי"
   ];
 
+  const categoryIcons = {
+    "ירקות ופירות": "🍎",
+    "מוצרי גבינה וחלב": "🥛",
+    "דברי מאפה": "🍞",
+    "שימורים": "🥫",
+    "מזווה, בישול ואפייה": "🌾",
+    "חטיפים ומתוקים": "🍿",
+    "קפואים": "❄️",
+    "חומרי כביסה וניקוי": "🧹",
+    "כללי": "📦"
+  };
+
+  function getCategoryEmoji(catName) {
+    return categoryIcons[catName] || "📂";
+  }
+
   let currentUser = null;
   let householdId = null;
   let currentStore = "";
   let allCategories = [...defaultCategories];
-  let globalCatDocs = []; // לשמירת מזהה המסמך עבור קטגוריות מותאמות
+  let globalCatDocs = [];
   let categoryOrder = [...defaultCategories];
   let currentItems = [];
   let unsubscribeShoppingList = null;
@@ -386,8 +435,11 @@
   const manageCategoriesCloseBtn = document.getElementById('manageCategoriesCloseBtn');
 
   const itemInput = document.getElementById('itemInput');
+  const itemQtyInput = document.getElementById('itemQtyInput');
   const itemCategorySelect = document.getElementById('itemCategorySelect');
   const addBtn = document.getElementById('addBtn');
+  const micBtn = document.getElementById('micBtn');
+  const masterSuggestions = document.getElementById('masterSuggestions');
 
   const searchInput = document.getElementById('searchInput');
   const categoryFilterSelect = document.getElementById('categoryFilterSelect');
@@ -398,6 +450,7 @@
 
   const editModal = document.getElementById('editModal');
   const editModalInput = document.getElementById('editModalInput');
+  const editModalQtyInput = document.getElementById('editModalQtyInput');
   const editModalCategorySelect = document.getElementById('editModalCategorySelect');
   const editModalSaveBtn = document.getElementById('editModalSaveBtn');
   const editModalCancelBtn = document.getElementById('editModalCancelBtn');
@@ -408,14 +461,12 @@
   const catOrderSaveBtn = document.getElementById('catOrderSaveBtn');
   const catOrderCancelBtn = document.getElementById('catOrderCancelBtn');
 
-  // Confirm Modal DOM Elements
   const confirmModal = document.getElementById('confirmModal');
   const confirmModalTitle = document.getElementById('confirmModalTitle');
   const confirmModalText = document.getElementById('confirmModalText');
   const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
   const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
 
-  // Loading Overlay DOM Elements
   const loadingOverlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
 
@@ -469,6 +520,7 @@
       await initHousehold();
       listenToGlobalCategories();
       loadStores();
+      loadMasterCatalogSuggestions();
     } else {
       currentUser = null;
       householdId = null;
@@ -493,6 +545,58 @@
     myHouseholdIdDisplay.textContent = householdId;
   }
 
+  async function loadMasterCatalogSuggestions() {
+    if (!householdId) return;
+    try {
+      const catalogRef = collection(db, "households", householdId, "masterCatalog");
+      const snapshot = await getDocs(catalogRef);
+      masterSuggestions.innerHTML = '';
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.dataset.category = item.category || "כללי";
+        masterSuggestions.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("Error loading master suggestions:", e);
+    }
+  }
+
+  itemInput.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    const opts = Array.from(masterSuggestions.options);
+    const match = opts.find(o => o.value.toLowerCase() === val.toLowerCase());
+    if (match && match.dataset.category) {
+      itemCategorySelect.value = match.dataset.category;
+    }
+  });
+
+  // זיהוי דיבור (Speech Recognition)
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'he-IL';
+    recognition.continuous = false;
+
+    micBtn.addEventListener('click', () => {
+      micBtn.style.background = '#ffebee';
+      recognition.start();
+    });
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      itemInput.value = transcript;
+      itemInput.dispatchEvent(new Event('input'));
+      micBtn.style.background = '#fff';
+    };
+
+    recognition.onerror = () => { micBtn.style.background = '#fff'; };
+    recognition.onend = () => { micBtn.style.background = '#fff'; };
+  } else {
+    micBtn.style.display = 'none';
+  }
+
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
     if (currentItems.length === 0) {
@@ -506,9 +610,11 @@
       try {
         const catalogRef = collection(db, "households", householdId, "masterCatalog");
         const existingDocs = await getDocs(catalogRef);
-        for (const docSnap of existingDocs.docs) {
-          await deleteDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id));
-        }
+
+        const batch = writeBatch(db);
+        existingDocs.forEach(docSnap => {
+          batch.delete(doc(db, "households", householdId, "masterCatalog", docSnap.id));
+        });
 
         const uniqueItemsMap = new Map();
         for (const item of currentItems) {
@@ -523,9 +629,13 @@
         }
 
         for (const item of uniqueItemsMap.values()) {
-          await addDoc(catalogRef, item);
+          const newDocRef = doc(catalogRef);
+          batch.set(newDocRef, item);
         }
+
+        await batch.commit();
         hideLoading();
+        await loadMasterCatalogSuggestions();
         await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים עם מצב הסימון שלהם)`, false);
       } catch (err) {
         hideLoading();
@@ -553,12 +663,14 @@
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
         let addedCount = 0;
 
+        const batch = writeBatch(db);
         for (const docSnap of catalogSnapshot.docs) {
           const catItem = docSnap.data();
           const cleanName = catItem.name.trim().toLowerCase();
 
           if (!existingNames.has(cleanName)) {
-            await addDoc(collection(db, "activeList"), {
+            const newDocRef = doc(collection(db, "activeList"));
+            batch.set(newDocRef, {
               name: catItem.name,
               category: catItem.category,
               completed: catItem.completed || false,
@@ -568,6 +680,10 @@
             existingNames.add(cleanName);
             addedCount++;
           }
+        }
+
+        if (addedCount > 0) {
+          await batch.commit();
         }
 
         hideLoading();
@@ -600,16 +716,15 @@
         return;
       }
 
-      let updatedCount = 0;
-      for (const docSnap of snapshot.docs) {
-        await updateDoc(doc(db, "activeList", docSnap.id), {
-          householdId: householdId
-        });
-        updatedCount++;
-      }
+      const batch = writeBatch(db);
+      snapshot.forEach(docSnap => {
+        batch.update(doc(db, "activeList", docSnap.id), { householdId: householdId });
+      });
+
+      await batch.commit();
 
       hideLoading();
-      await showCustomConfirm("הצלחה", `בהצלחה! ${updatedCount} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
+      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
       shareForm.classList.remove('active');
     } catch (err) {
       hideLoading();
@@ -630,6 +745,7 @@
       targetHouseholdInput.value = '';
       shareForm.classList.remove('active');
       listenToShoppingList();
+      loadMasterCatalogSuggestions();
     }
   });
 
@@ -655,9 +771,10 @@
     categoryFilterSelect.innerHTML = '<option value="ALL">כל הקטגוריות</option>';
 
     allCategories.forEach(cat => {
-      itemCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-      editModalCategorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-      categoryFilterSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      const icon = getCategoryEmoji(cat);
+      itemCategorySelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
+      editModalCategorySelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
+      categoryFilterSelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
     });
 
     categoryFilterSelect.value = selectedFilter || "ALL";
@@ -677,7 +794,6 @@
     categoryForm.classList.remove('active');
   });
 
-  /* === ניהול קטגוריות: עריכה ומחיקה === */
   openManageCategoriesBtn.addEventListener('click', () => {
     renderManageCategoriesList();
     manageCategoriesModal.classList.remove('hidden');
@@ -689,11 +805,12 @@
     manageCategoriesList.innerHTML = '';
     allCategories.forEach(cat => {
       const isDefault = defaultCategories.includes(cat);
+      const icon = getCategoryEmoji(cat);
       const li = document.createElement('li');
       li.className = 'cat-order-item';
       
       const span = document.createElement('span');
-      span.innerHTML = `${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}`;
+      span.innerHTML = `${icon} ${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}`;
       
       const btnGroup = document.createElement('div');
       
@@ -728,27 +845,32 @@
     showLoading("מעדכן את שם הקטגוריה...");
 
     try {
+      const batch = writeBatch(db);
+
       const docObj = globalCatDocs.find(d => d.name === oldName);
       if (docObj) {
-        await updateDoc(doc(db, "globalCategories", docObj.id), { name: trimmedNewName });
+        batch.update(doc(db, "globalCategories", docObj.id), { name: trimmedNewName });
       } else {
-        await addDoc(collection(db, "globalCategories"), { name: trimmedNewName });
+        const newCatRef = doc(collection(db, "globalCategories"));
+        batch.set(newCatRef, { name: trimmedNewName });
       }
 
       const activeQ = query(collection(db, "activeList"), where("category", "==", oldName));
       const activeSnap = await getDocs(activeQ);
-      for (const docSnap of activeSnap.docs) {
-        await updateDoc(doc(db, "activeList", docSnap.id), { category: trimmedNewName });
-      }
+      activeSnap.forEach(docSnap => {
+        batch.update(doc(db, "activeList", docSnap.id), { category: trimmedNewName });
+      });
 
       if (householdId) {
         const masterRef = collection(db, "households", householdId, "masterCatalog");
         const masterQ = query(masterRef, where("category", "==", oldName));
         const masterSnap = await getDocs(masterQ);
-        for (const docSnap of masterSnap.docs) {
-          await updateDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: trimmedNewName });
-        }
+        masterSnap.forEach(docSnap => {
+          batch.update(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: trimmedNewName });
+        });
       }
+
+      await batch.commit();
 
       hideLoading();
       renderManageCategoriesList();
@@ -766,25 +888,29 @@
     showLoading("מוחק את הקטגוריה ומעדכן מוצרים...");
 
     try {
+      const batch = writeBatch(db);
+
       const docObj = globalCatDocs.find(d => d.name === catName);
       if (docObj) {
-        await deleteDoc(doc(db, "globalCategories", docObj.id));
+        batch.delete(doc(db, "globalCategories", docObj.id));
       }
 
       const activeQ = query(collection(db, "activeList"), where("category", "==", catName));
       const activeSnap = await getDocs(activeQ);
-      for (const docSnap of activeSnap.docs) {
-        await updateDoc(doc(db, "activeList", docSnap.id), { category: "כללי" });
-      }
+      activeSnap.forEach(docSnap => {
+        batch.update(doc(db, "activeList", docSnap.id), { category: "כללי" });
+      });
 
       if (householdId) {
         const masterRef = collection(db, "households", householdId, "masterCatalog");
         const masterQ = query(masterRef, where("category", "==", catName));
         const masterSnap = await getDocs(masterQ);
-        for (const docSnap of masterSnap.docs) {
-          await updateDoc(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: "כללי" });
-        }
+        masterSnap.forEach(docSnap => {
+          batch.update(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: "כללי" });
+        });
       }
+
+      await batch.commit();
 
       allCategories = allCategories.filter(c => c !== catName);
       populateCategoryDropdowns();
@@ -899,9 +1025,10 @@
       if (grouped[cat] && grouped[cat].length > 0) {
         grouped[cat].sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
+        const catIcon = getCategoryEmoji(cat);
         const catHeader = document.createElement('div');
         catHeader.className = 'category-header';
-        catHeader.innerHTML = `<span>📂 ${cat}</span><span>(${grouped[cat].length})</span>`;
+        catHeader.innerHTML = `<span>${catIcon} ${cat}</span><span>(${grouped[cat].length})</span>`;
         shoppingListContainer.appendChild(catHeader);
 
         const ul = document.createElement('ul');
@@ -909,10 +1036,14 @@
           const li = document.createElement('li');
           if (item.completed) li.classList.add('checked');
 
+          const qtyDisplay = item.qty ? `<span class="item-qty">(${item.qty})</span>` : '';
+
           li.innerHTML = `
             <div class="item-right">
               <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''}>
-              <span>${item.name}</span>
+              <div class="item-details">
+                <span>${item.name} ${qtyDisplay}</span>
+              </div>
             </div>
             <div class="item-left">
               <button class="edit-btn">✏️</button>
@@ -944,6 +1075,7 @@
 
   addBtn.addEventListener('click', async () => {
     const text = itemInput.value.trim();
+    const qty = itemQtyInput.value.trim();
     const category = itemCategorySelect.value;
     if (!text || !householdId) return;
 
@@ -955,6 +1087,7 @@
 
     await addDoc(collection(db, "activeList"), { 
       name: text, 
+      qty: qty,
       category: category,
       completed: false, 
       householdId: householdId,
@@ -962,11 +1095,13 @@
     });
 
     itemInput.value = '';
+    itemQtyInput.value = '';
   });
 
   function openEditModal(item) {
     activeEditingItem = item;
     editModalInput.value = item.name;
+    editModalQtyInput.value = item.qty || '';
     editModalCategorySelect.value = item.category || "כללי";
     editModal.classList.remove('hidden');
   }
@@ -976,11 +1111,13 @@
   editModalSaveBtn.addEventListener('click', async () => {
     if (!activeEditingItem) return;
     const newName = editModalInput.value.trim();
+    const newQty = editModalQtyInput.value.trim();
     const newCat = editModalCategorySelect.value;
 
     if (newName) {
       await updateDoc(doc(db, "activeList", activeEditingItem.id), {
         name: newName,
+        qty: newQty,
         category: newCat
       });
     }
@@ -997,10 +1134,11 @@
   function renderCategoryOrderList() {
     catOrderList.innerHTML = '';
     categoryOrder.forEach((cat, idx) => {
+      const icon = getCategoryEmoji(cat);
       const li = document.createElement('li');
       li.className = 'cat-order-item';
       li.innerHTML = `
-        <span>${idx + 1}. ${cat}</span>
+        <span>${idx + 1}. ${icon} ${cat}</span>
         <div>
           <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, -1)">⬆️</button>
           <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, 1)">⬇️</button>
@@ -1046,13 +1184,17 @@
     if (isConfirmed) {
       showLoading("מוחק מוצרים שלא סומנו ומכין את הרשימה לקנייה בסופר...");
       try {
-        for (const item of uncompleted) {
-          await deleteDoc(doc(db, "activeList", item.id));
-        }
+        const batch = writeBatch(db);
 
-        for (const item of completed) {
-          await updateDoc(doc(db, "activeList", item.id), { completed: false });
-        }
+        uncompleted.forEach(item => {
+          batch.delete(doc(db, "activeList", item.id));
+        });
+
+        completed.forEach(item => {
+          batch.update(doc(db, "activeList", item.id), { completed: false });
+        });
+
+        await batch.commit();
       } catch (err) {
         console.error(err);
       } finally {
@@ -1076,9 +1218,12 @@
     if (isConfirmed) {
       showLoading("מוחק את המוצרים המסומנים ומסיים את הקנייה...");
       try {
-        for (const item of completed) {
-          await deleteDoc(doc(db, "activeList", item.id));
-        }
+        const batch = writeBatch(db);
+        completed.forEach(item => {
+          batch.delete(doc(db, "activeList", item.id));
+        });
+
+        await batch.commit();
       } catch (err) {
         console.error(err);
       } finally {
@@ -1095,4 +1240,3 @@
 
 </body>
 </html>
-
