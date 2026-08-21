@@ -62,19 +62,32 @@
     .search-box {
       position: relative;
       flex: 2;
+      display: flex;
+      align-items: center;
     }
     .search-box input {
       padding-right: 36px;
+      padding-left: 36px;
       background-color: #fff;
       border: 1px solid #2e7d32;
+      width: 100%;
     }
     .search-box .search-icon {
       position: absolute;
       right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
       font-size: 16px;
       pointer-events: none;
+    }
+    .search-box .search-mic-btn {
+      position: absolute;
+      left: 6px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      width: auto;
+      line-height: 1;
     }
 
     .category-header {
@@ -250,6 +263,7 @@
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input type="text" id="searchInput" placeholder="חפש פריט...">
+        <button type="button" id="searchMicBtn" class="search-mic-btn" title="חיפוש קולי">🎙️</button>
       </div>
     </div>
 
@@ -442,6 +456,7 @@
   const masterSuggestions = document.getElementById('masterSuggestions');
 
   const searchInput = document.getElementById('searchInput');
+  const searchMicBtn = document.getElementById('searchMicBtn');
   const categoryFilterSelect = document.getElementById('categoryFilterSelect');
 
   const shoppingListContainer = document.getElementById('shoppingListContainer');
@@ -572,20 +587,22 @@
     }
   });
 
-  // זיהוי דיבור מואץ (Speech Recognition)
+  // זיהוי דיבור מואץ (Speech Recognition) להוספת מוצר ולחיפוש מוצר
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'he-IL';
-    recognition.continuous = false;
-    recognition.interimResults = true; // הצגת תוצאות בזמן אמת
+
+    // זיהוי דיבור להוספת מוצר
+    const addItemRecognition = new SpeechRecognition();
+    addItemRecognition.lang = 'he-IL';
+    addItemRecognition.continuous = false;
+    addItemRecognition.interimResults = true;
 
     micBtn.addEventListener('click', () => {
       micBtn.style.background = '#ffebee';
-      recognition.start();
+      addItemRecognition.start();
     });
 
-    recognition.onresult = (event) => {
+    addItemRecognition.onresult = (event) => {
       let transcript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
@@ -594,17 +611,47 @@
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
 
-      // עצירה יזומה ומיידית עם קבלת התוצאה הסופית
       if (event.results[0].isFinal) {
-        recognition.stop();
+        addItemRecognition.stop();
         micBtn.style.background = '#fff';
       }
     };
 
-    recognition.onerror = () => { micBtn.style.background = '#fff'; };
-    recognition.onend = () => { micBtn.style.background = '#fff'; };
+    addItemRecognition.onerror = () => { micBtn.style.background = '#fff'; };
+    addItemRecognition.onend = () => { micBtn.style.background = '#fff'; };
+
+    // זיהוי דיבור לחיפוש מוצר
+    const searchRecognition = new SpeechRecognition();
+    searchRecognition.lang = 'he-IL';
+    searchRecognition.continuous = false;
+    searchRecognition.interimResults = true;
+
+    searchMicBtn.addEventListener('click', () => {
+      searchMicBtn.style.opacity = '0.5';
+      searchRecognition.start();
+    });
+
+    searchRecognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      
+      searchInput.value = transcript;
+      searchInput.dispatchEvent(new Event('input'));
+
+      if (event.results[0].isFinal) {
+        searchRecognition.stop();
+        searchMicBtn.style.opacity = '1';
+      }
+    };
+
+    searchRecognition.onerror = () => { searchMicBtn.style.opacity = '1'; };
+    searchRecognition.onend = () => { searchMicBtn.style.opacity = '1'; };
+
   } else {
     micBtn.style.display = 'none';
+    searchMicBtn.style.display = 'none';
   }
 
   async function addItemToDatabase() {
@@ -632,7 +679,6 @@
     itemQtyInput.value = '';
   }
 
-  // מאזיני אירועים להוספת מוצר בלחיצה או בלחיצה על Enter
   addBtn.addEventListener('click', addItemToDatabase);
 
   itemInput.addEventListener('keydown', (e) => {
