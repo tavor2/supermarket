@@ -711,7 +711,7 @@
     // --- ההקלטה הקולית להוספת מוצר ---
     const addItemRecognition = new SpeechRecognition();
     addItemRecognition.lang = 'he-IL';
-    addItemRecognition.continuous = false;
+    addItemRecognition.continuous = true;
     addItemRecognition.interimResults = true;
 
     micBtn.addEventListener('click', (e) => {
@@ -729,15 +729,16 @@
 
       if (transcript.includes('סיים')) {
         transcript = transcript.replace(/סיים/g, '').trim();
-        itemInput.value = transcript;
-        itemInput.dispatchEvent(new Event('input'));
-        addItemRecognition.stop();
-        releaseMicButtons();
-        return;
       }
 
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
+
+      // עצירת ההקלטה מיד כשהטקסט מוזן לתיבה
+      if (transcript.length > 0) {
+        addItemRecognition.stop();
+        releaseMicButtons();
+      }
     };
 
     addItemRecognition.onerror = releaseMicButtons;
@@ -746,7 +747,7 @@
     // --- ההקלטה הקולית לחיפוש ---
     const searchRecognition = new SpeechRecognition();
     searchRecognition.lang = 'he-IL';
-    searchRecognition.continuous = false;
+    searchRecognition.continuous = true;
     searchRecognition.interimResults = true;
 
     searchMicBtn.addEventListener('click', (e) => {
@@ -764,15 +765,16 @@
 
       if (transcript.includes('סיים')) {
         transcript = transcript.replace(/סיים/g, '').trim();
-        searchInput.value = transcript;
-        searchInput.dispatchEvent(new Event('input'));
-        searchRecognition.stop();
-        releaseMicButtons();
-        return;
       }
 
       searchInput.value = transcript;
       searchInput.dispatchEvent(new Event('input'));
+
+      // עצירת ההקלטה מיד כשהטקסט מוזן לתיבה
+      if (transcript.length > 0) {
+        searchRecognition.stop();
+        releaseMicButtons();
+      }
     };
 
     searchRecognition.onerror = releaseMicButtons;
