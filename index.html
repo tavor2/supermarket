@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#2e7d32">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="רשימת קניות">
-  <title>רשימת קניות | רשימת קניות חכמה</title>
+  <meta name="apple-mobile-web-app-title" content="רשימת קניות ומלאי">
+  <title>רשימת קניות ומלאי חכם</title>
 
   <link rel="manifest" href="manifest.json">
 
   <style>
-    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; --info: #0288d1; }
+    :root { --primary: #2e7d32; --bg: #f4f6f8; --card: #ffffff; --text: #333; --danger: #c62828; --info: #0288d1; --accent: #f57c00; }
     body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
     .app-container { width: 100%; max-width: 480px; background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 15px; }
@@ -24,6 +24,11 @@
 
     .user-badge { background: #e8f5e9; color: var(--primary); font-size: 13px; font-weight: bold; padding: 8px 12px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
     .user-badge button { background: none; border: none; color: var(--danger); text-decoration: underline; cursor: pointer; padding: 0; width: auto; font-size: 12px; }
+
+    /* ניווט בין לשוניות (טאבים) */
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e0e0; color: #555; font-weight: bold; border-radius: 8px; cursor: pointer; text-align: center; font-size: 14px; }
+    .tab-btn.active { background: var(--primary); color: white; }
 
     .field { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -46,84 +51,29 @@
     .add-item-row2 select { flex: 1.5; }
     .add-item-row2 button { flex: 1; margin-top: 0; }
     
-    .filter-container {
-      display: flex;
-      gap: 8px;
-      margin-top: 15px;
-      margin-bottom: 10px;
-    }
-    .filter-container select {
-      flex: 1.2;
-      border: 1px solid #2e7d32;
-      background-color: #fff;
-    }
-    .search-box {
-      position: relative;
-      flex: 2;
-      display: flex;
-      align-items: center;
-    }
-    .search-box input {
-      padding-right: 36px;
-      padding-left: 36px;
-      background-color: #fff;
-      border: 1px solid #2e7d32;
-      width: 100%;
-    }
-    .search-box .search-icon {
-      position: absolute;
-      right: 12px;
-      font-size: 16px;
-      pointer-events: none;
-    }
-    .search-box .search-mic-btn {
-      position: absolute;
-      left: 6px;
-      background: none;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 4px;
-      width: auto;
-      line-height: 1;
-    }
+    .filter-container { display: flex; gap: 8px; margin-top: 15px; margin-bottom: 15px; }
+    .filter-container select { flex: 1.2; border: 1px solid #2e7d32; background-color: #fff; }
+    .search-box { position: relative; flex: 2; display: flex; align-items: center; }
+    .search-box input { padding-right: 36px; padding-left: 36px; background-color: #fff; border: 1px solid #2e7d32; width: 100%; }
+    .search-box .search-icon { position: absolute; right: 12px; font-size: 16px; pointer-events: none; }
+    .search-box .search-mic-btn { position: absolute; left: 6px; background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; width: auto; line-height: 1; }
 
-    .toggle-all-btn {
-      background-color: #e8f5e9;
-      color: var(--primary);
-      border: 1px solid var(--primary);
-      font-size: 13px;
-      font-weight: bold;
-      padding: 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-bottom: 15px;
-    }
-
-    .category-header {
-      background: #e8f5e9;
-      color: var(--primary);
-      padding: 8px 12px;
-      font-weight: bold;
-      border-radius: 6px;
-      margin-top: 15px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .category-header { background: #e8f5e9; color: var(--primary); padding: 8px 12px; font-weight: bold; border-radius: 6px; margin-top: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
     ul { list-style: none; padding: 0; margin: 0; }
-    li { 
-      background: #f9f9f9; border: 1px solid #eee; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; touch-action: none; user-select: none; transition: background-color 0.2s, box-shadow 0.2s;
-    }
+    li { background: #f9f9f9; border: 1px solid #eee; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; touch-action: none; user-select: none; transition: background-color 0.2s, box-shadow 0.2s; }
     li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
+    li.low-stock { border-right: 5px solid var(--accent); }
     .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
     
     .item-right { display: flex; align-items: center; gap: 8px; }
     .item-details { display: flex; flex-direction: column; }
     .item-qty { font-size: 12px; color: #666; }
+    .item-consumption { font-size: 11px; color: #0288d1; font-weight: normal; }
     .item-left { display: flex; align-items: center; gap: 6px; }
+
+    .qty-controls { display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 2px 6px; }
+    .qty-btn { width: 24px; height: 24px; padding: 0; font-size: 14px; border: none; background: #eee; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
 
     .edit-btn, .delete-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px; margin: 0; width: auto; }
     .edit-btn { color: #666; }
@@ -138,11 +88,11 @@
 
     .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); cursor: pointer; }
     .clear-btn:hover { background-color: #ffebee; }
-    .clear-btn:disabled { opacity: 0.5; cursor: not-allowed; background-color: #f5f5f5; }
     .hidden { display: none !important; }
 
     .share-code-box { background: #fff; padding: 6px; border: 1px dashed #ccc; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 5px 0; }
 
+    /* מודאלים */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
     .modal-box h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--text); }
@@ -153,43 +103,20 @@
     .cat-order-list { list-style: none; padding: 0; margin: 10px 0; }
     .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
 
-    .loading-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      color: #fff;
-      text-align: center;
-    }
-    .hourglass-icon {
-      font-size: 50px;
-      animation: spinHourglass 2s infinite ease-in-out;
-      margin-bottom: 15px;
-    }
-    @keyframes spinHourglass {
-      0% { transform: rotate(0deg); }
-      50% { transform: rotate(180deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .loading-text {
-      font-size: 16px;
-      font-weight: bold;
-      max-width: 80%;
-      line-height: 1.4;
-    }
+    /* טעינה ברקע */
+    .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: #fff; text-align: center; }
+    .hourglass-icon { font-size: 50px; animation: spinHourglass 2s infinite ease-in-out; margin-bottom: 15px; }
+    @keyframes spinHourglass { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+    .loading-text { font-size: 16px; font-weight: bold; max-width: 80%; line-height: 1.4; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <h1>🛒 רשימת קניות</h1>
+  <h1>🛒 ניהול רשימה ומלאי בית</h1>
 
   <div id="loginSection" class="auth-box">
-    <p>התחבר כדי לשמור ולסנכרן את רשימת הקניות שלך בכל המכשירים</p>
+    <p>התחבר כדי לשמור ולסנכרן את רשימת הקניות והמלאי בכל המכשירים</p>
     <button id="googleLoginBtn" class="google-btn">
       <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
       התחבר באמצעות Google
@@ -202,97 +129,132 @@
       <button id="logoutBtn">התנתק</button>
     </div>
 
-    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-      <button id="loadMasterBtn" class="btn-info" style="font-size: 13px; margin: 0; padding: 10px;">🔄 טען רשימה מהמאגר הקבוע</button>
-      <button id="saveMasterBtn" class="btn-secondary" style="font-size: 13px; margin: 0; padding: 10px; background-color: #455a64;">💾 שמור רשימה כמאגר קבוע</button>
+    <!-- כפתורי ניווט בין לשוניות -->
+    <div class="nav-tabs">
+      <button id="tabShoppingBtn" class="tab-btn active">🛒 רשימת קניות</button>
+      <button id="tabPantryBtn" class="tab-btn">📦 מלאי הבית</button>
     </div>
 
-    <button type="button" class="toggle-btn" id="toggleShareForm">👨‍👩‍👧‍👦 שיתוף רשימה משפחתית</button>
-    <div class="collapsible-box" id="shareForm">
-      <div>קוד המשק בית הנוכחי שלך:</div>
-      <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
-      
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
-
-      <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
-      <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
-      <input type="text" id="targetHouseholdInput" placeholder="הדבק כאן את הקוד שלהם..." style="font-size: 12px; padding: 8px;">
-      <button id="joinHouseholdBtn" class="btn-primary" style="padding: 8px; font-size: 13px;">חבר לרשימה זו</button>
-    </div>
-
-    <div class="field">
-      <label for="storeSelect">בחר סניף סופר:</label>
-      <select id="storeSelect"></select>
-    </div>
-
-    <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
-    <div class="collapsible-box" id="storeForm">
-      <div class="input-group">
-        <input type="text" id="newStoreInput" placeholder="שם הסניף...">
-        <button id="addStoreBtn" class="btn-primary">שמור סניף</button>
+    <!-- ===== לשונית 1: רשימת קניות ===== -->
+    <div id="shoppingTabContent">
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button id="loadMasterBtn" class="btn-info" style="font-size: 13px; margin: 0; padding: 10px;">🔄 טען מאגר קבוע</button>
+        <button id="saveMasterBtn" class="btn-secondary" style="font-size: 13px; margin: 0; padding: 10px; background-color: #455a64;">💾 שמור כמאגר</button>
       </div>
-    </div>
 
-    <div class="field">
-      <label for="itemInput">הוסף מוצר לרשימה:</label>
-      <div class="add-item-container">
-        <div class="add-item-row1">
-          <input type="text" id="itemInput" placeholder="שם המוצר..." list="masterSuggestions">
-          <datalist id="masterSuggestions"></datalist>
-          <button type="button" id="micBtn" class="mic-btn" title="הקלטת מוצר בקול">🎙️</button>
-        </div>
-        <div class="add-item-row2">
-          <input type="text" id="itemQtyInput" placeholder="כמות / הערה (למשל: 2 ק&quot;ג)">
-          <select id="itemCategorySelect"></select>
-          <button id="addBtn" class="btn-primary">הוסף</button>
+      <button type="button" class="toggle-btn" id="toggleShareForm">👨‍👩‍👧‍👦 שיתוף משפחתי</button>
+      <div class="collapsible-box" id="shareForm">
+        <div>קוד משק בית:</div>
+        <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
+        <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך מוצרים ישנים</button>
+        <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
+        <label style="font-size: 12px;">התחברות לרשימה קיימת:</label>
+        <input type="text" id="targetHouseholdInput" placeholder="הדבק קוד..." style="font-size: 12px; padding: 8px;">
+        <button id="joinHouseholdBtn" class="btn-primary" style="padding: 8px; font-size: 13px;">חבר לרשימה זו</button>
+      </div>
+
+      <div class="field">
+        <label for="storeSelect">בחר סניף סופר:</label>
+        <select id="storeSelect"></select>
+      </div>
+
+      <button type="button" class="toggle-btn" id="toggleStoreForm">+ הוסף סניף חדש</button>
+      <div class="collapsible-box" id="storeForm">
+        <div class="input-group">
+          <input type="text" id="newStoreInput" placeholder="שם הסניף...">
+          <button id="addStoreBtn" class="btn-primary">שמור</button>
         </div>
       </div>
-    </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-      <button type="button" class="toggle-btn" id="toggleCategoryForm" style="margin-bottom: 0;">+ הוסף קטגוריה חדשה</button>
-      <button type="button" class="toggle-btn" id="openManageCategoriesBtn" style="margin-bottom: 0;">⚙️ ניהול קטגוריות</button>
-    </div>
+      <div class="field">
+        <label for="itemInput">הוסף מוצר לרשימה:</label>
+        <div class="add-item-container">
+          <div class="add-item-row1">
+            <input type="text" id="itemInput" placeholder="שם המוצר..." list="masterSuggestions">
+            <datalist id="masterSuggestions"></datalist>
+            <button type="button" id="micBtn" class="mic-btn" title="הקלטה בקול">🎙️</button>
+          </div>
+          <div class="add-item-row2">
+            <input type="text" id="itemQtyInput" placeholder="כמות (למשל: 2)">
+            <select id="itemCategorySelect"></select>
+            <button id="addBtn" class="btn-primary">הוסף</button>
+          </div>
+        </div>
+      </div>
 
-    <div class="collapsible-box" id="categoryForm">
-      <div class="input-group">
-        <input type="text" id="newCategoryInput" placeholder="שם הקטגוריה...">
-        <button id="addCategoryBtn" class="btn-primary">שמור</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <button type="button" class="toggle-btn" id="toggleCategoryForm" style="margin-bottom: 0;">+ קטגוריה חדשה</button>
+        <button type="button" class="toggle-btn" id="openManageCategoriesBtn" style="margin-bottom: 0;">⚙️ ניהול קטגוריות</button>
+      </div>
+
+      <div class="collapsible-box" id="categoryForm">
+        <div class="input-group">
+          <input type="text" id="newCategoryInput" placeholder="שם הקטגוריה...">
+          <button id="addCategoryBtn" class="btn-primary">שמור</button>
+        </div>
+      </div>
+
+      <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר</button>
+
+      <div class="filter-container">
+        <select id="categoryFilterSelect"><option value="ALL">כל הקטגוריות</option></select>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="חפש פריט...">
+          <button type="button" id="searchMicBtn" class="search-mic-btn" title="חיפוש קולי">🎙️</button>
+        </div>
+      </div>
+
+      <div id="shoppingListContainer"></div>
+
+      <div class="action-btn-group">
+        <button id="keepOnlyCheckedBtn" class="btn-primary" style="margin-top: 0;">🚀 יציאה לסופר (רק מסומנים)</button>
+        <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (עדכן מלאי)</button>
       </div>
     </div>
 
-    <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר (קטגוריות)</button>
-
-    <div class="filter-container">
-      <select id="categoryFilterSelect">
-        <option value="ALL">כל הקטגוריות</option>
-      </select>
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="חפש פריט...">
-        <button type="button" id="searchMicBtn" class="search-mic-btn" title="חיפוש קולי">🎙️</button>
+    <!-- ===== לשונית 2: מלאי הבית ===== -->
+    <div id="pantryTabContent" class="hidden">
+      <div class="field">
+        <label for="pantryItemInput">הוסף מוצר למלאי הבית:</label>
+        <div class="add-item-container">
+          <div class="add-item-row1">
+            <input type="text" id="pantryItemInput" placeholder="שם המוצר...">
+          </div>
+          <div class="add-item-row2">
+            <input type="number" id="pantryItemQtyInput" placeholder="כמות קיימת" value="1" min="0">
+            <input type="number" id="pantryItemMinQtyInput" placeholder="סף מינימום" value="1" min="0">
+          </div>
+          <div class="add-item-row2">
+            <select id="pantryCategorySelect"></select>
+            <button id="addPantryBtn" class="btn-primary">הוסף למלאי</button>
+          </div>
+        </div>
       </div>
+
+      <div class="filter-container">
+        <select id="pantryCategoryFilterSelect"><option value="ALL">כל הקטגוריות</option></select>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="pantrySearchInput" placeholder="חפש במלאי...">
+        </div>
+      </div>
+
+      <div id="pantryListContainer"></div>
     </div>
 
-    <button id="toggleSelectAllVisibleBtn" class="toggle-all-btn">☑️/☐ סמן / בטל הכל (המוצגים)</button>
-
-    <div id="shoppingListContainer"></div>
-
-    <div class="action-btn-group">
-      <button id="keepOnlyCheckedBtn" class="btn-primary" style="margin-top: 0;">🚀 יציאה לסופר (השאר רק מסומנים)</button>
-      <button id="clearCompletedBtn" class="clear-btn" disabled>🧹 סיים קנייה (מחק מסומנים)</button>
-    </div>
   </div>
 </div>
 
+<!-- רכיבי דיאלוג שטעינה ומודאלים -->
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="hourglass-icon">⏳</div>
-  <div id="loadingText" class="loading-text">מבצע פעולה ברקע, אנא המתן...</div>
+  <div id="loadingText" class="loading-text">מבצע פעולה ברקע...</div>
 </div>
 
 <div id="confirmModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3 id="confirmModalTitle">אישור action</h3>
+    <h3 id="confirmModalTitle">אישור</h3>
     <p id="confirmModalText" style="font-size: 14px; color: #444; margin-bottom: 20px;"></p>
     <div class="modal-actions">
       <button id="confirmModalConfirmBtn" class="btn-primary">אישור</button>
@@ -303,19 +265,10 @@
 
 <div id="editModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3>עדכן פריט</h3>
-    <div class="field">
-      <label>שם הפריט:</label>
-      <input type="text" id="editModalInput">
-    </div>
-    <div class="field">
-      <label>כמות / הערה:</label>
-      <input type="text" id="editModalQtyInput">
-    </div>
-    <div class="field">
-      <label>קטגוריה:</label>
-      <select id="editModalCategorySelect"></select>
-    </div>
+    <h3>עדכן פריט רשימה</h3>
+    <div class="field"><label>שם הפריט:</label><input type="text" id="editModalInput"></div>
+    <div class="field"><label>כמות / הערה:</label><input type="text" id="editModalQtyInput"></div>
+    <div class="field"><label>קטגוריה:</label><select id="editModalCategorySelect"></select></div>
     <div class="modal-actions">
       <button id="editModalSaveBtn" class="btn-primary">אישור</button>
       <button id="editModalCancelBtn" class="btn-cancel">ביטול</button>
@@ -323,24 +276,34 @@
   </div>
 </div>
 
+<div id="editPantryModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>עדכן מוצר במלאי</h3>
+    <div class="field"><label>שם הפריט:</label><input type="text" id="editPantryNameInput"></div>
+    <div class="field"><label>כמות במלאי:</label><input type="number" id="editPantryQtyInput" min="0"></div>
+    <div class="field"><label>סף מינימום להזמנה:</label><input type="number" id="editPantryMinQtyInput" min="0"></div>
+    <div class="field"><label>קטגוריה:</label><select id="editPantryCategorySelect"></select></div>
+    <div class="modal-actions">
+      <button id="editPantrySaveBtn" class="btn-primary">אישור</button>
+      <button id="editPantryCancelBtn" class="btn-cancel">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <div id="manageCategoriesModal" class="modal-overlay hidden">
   <div class="modal-box">
     <h3>ניהול קטגוריות</h3>
-    <p style="font-size: 13px; color: #666;">ערוך את שם הקטגוריה או מחק אותה. מחיקה תעביר את פריטי הקטגוריה ל-"כללי".</p>
     <ul id="manageCategoriesList" class="cat-order-list"></ul>
-    <div class="modal-actions">
-      <button id="manageCategoriesCloseBtn" class="btn-cancel">סגור</button>
-    </div>
+    <div class="modal-actions"><button id="manageCategoriesCloseBtn" class="btn-cancel">סגור</button></div>
   </div>
 </div>
 
 <div id="catOrderModal" class="modal-overlay hidden">
   <div class="modal-box">
     <h3>סדר הקטגוריות בסופר</h3>
-    <p style="font-size: 13px; color: #666;">השתמש בחיצים כדי לסדר את המסלול בסופר הנוכחי:</p>
     <ul id="catOrderList" class="cat-order-list"></ul>
     <div class="modal-actions">
-      <button id="catOrderSaveBtn" class="btn-primary">שמור סדר</button>
+      <button id="catOrderSaveBtn" class="btn-primary">שמור</button>
       <button id="catOrderCancelBtn" class="btn-cancel">ביטול</button>
     </div>
   </div>
@@ -348,18 +311,12 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { 
-    getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { 
-    getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot, writeBatch, enableIndexedDbPersistence 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, deleteDoc, query, where, onSnapshot, writeBatch, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker נרשם בהצלחה:', reg.scope))
-        .catch(err => console.error('שגיאה ברישום Service Worker:', err));
+      navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
     });
   }
 
@@ -377,133 +334,76 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Persistence failed: Multiple tabs open');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Persistence is not supported by browser');
-    }
-  });
+  enableIndexedDbPersistence(db).catch(() => {});
 
   const googleProvider = new GoogleAuthProvider();
 
   const defaultCategories = [
-    "ירקות ופירות",
-    "מוצרי גבינה וחלב",
-    "דברי מאפה",
-    "שימורים",
-    "מזווה, בישול ואפייה",
-    "חטיפים ומתוקים",
-    "קפואים",
-    "חומרי כביסה וניקוי",
-    "כללי"
+    "ירקות ופירות", "מוצרי גבינה וחלב", "דברי מאפה", "שימורים",
+    "מזווה, בישול ואפייה", "חטיפים ומתוקים", "קפואים", "חומרי כביסה וניקוי", "כללי"
   ];
 
   const categoryIcons = {
-    "ירקות ופירות": "🍎",
-    "מוצרי גבינה וחלב": "🥛",
-    "דברי מאפה": "🍞",
-    "שימורים": "🥫",
-    "מזווה, בישול ואפייה": "🌾",
-    "חטיפים ומתוקים": "🍿",
-    "קפואים": "❄️",
-    "חומרי כביסה וניקוי": "🧹",
-    "כללי": "📦"
+    "ירקות ופירות": "🍎", "מוצרי גבינה וחלב": "🥛", "דברי מאפה": "🍞", "שימורים": "🥫",
+    "מזווה, בישול ואפייה": "🌾", "חטיפים ומתוקים": "🍿", "קפואים": "❄️", "חומרי כביסה וניקוי": "🧹", "כללי": "📦"
   };
 
-  function getCategoryEmoji(catName) {
-    return categoryIcons[catName] || "📂";
-  }
+  function getCategoryEmoji(catName) { return categoryIcons[catName] || "📂"; }
 
-  let currentUser = null;
-  let householdId = null;
-  let currentStore = "";
-  let allCategories = [...defaultCategories];
-  let globalCatDocs = [];
-  let categoryOrder = [...defaultCategories];
-  let currentItems = [];
-  let unsubscribeShoppingList = null;
-  let unsubscribeCategories = null;
-  let activeEditingItem = null;
+  let currentUser = null, householdId = null, currentStore = "";
+  let allCategories = [...defaultCategories], globalCatDocs = [], categoryOrder = [...defaultCategories];
+  let currentItems = [], pantryItems = [];
+  let unsubscribeShoppingList = null, unsubscribeCategories = null, unsubscribePantry = null;
+  let activeEditingItem = null, activeEditingPantryItem = null;
 
-  const loginSection = document.getElementById('loginSection');
-  const appSection = document.getElementById('appSection');
-  const googleLoginBtn = document.getElementById('googleLoginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userNameDisplay = document.getElementById('userNameDisplay');
+  // DOM Elements
+  const tabShoppingBtn = document.getElementById('tabShoppingBtn');
+  const tabPantryBtn = document.getElementById('tabPantryBtn');
+  const shoppingTabContent = document.getElementById('shoppingTabContent');
+  const pantryTabContent = document.getElementById('pantryTabContent');
 
-  const saveMasterBtn = document.getElementById('saveMasterBtn');
-  const loadMasterBtn = document.getElementById('loadMasterBtn');
+  const loginSection = document.getElementById('loginSection'), appSection = document.getElementById('appSection');
+  const googleLoginBtn = document.getElementById('googleLoginBtn'), logoutBtn = document.getElementById('logoutBtn'), userNameDisplay = document.getElementById('userNameDisplay');
 
-  const toggleShareForm = document.getElementById('toggleShareForm');
-  const shareForm = document.getElementById('shareForm');
-  const myHouseholdIdDisplay = document.getElementById('myHouseholdIdDisplay');
-  const migrateOldItemsBtn = document.getElementById('migrateOldItemsBtn');
-  const targetHouseholdInput = document.getElementById('targetHouseholdInput');
-  const joinHouseholdBtn = document.getElementById('joinHouseholdBtn');
+  const saveMasterBtn = document.getElementById('saveMasterBtn'), loadMasterBtn = document.getElementById('loadMasterBtn');
+  const toggleShareForm = document.getElementById('toggleShareForm'), shareForm = document.getElementById('shareForm'), myHouseholdIdDisplay = document.getElementById('myHouseholdIdDisplay');
+  const migrateOldItemsBtn = document.getElementById('migrateOldItemsBtn'), targetHouseholdInput = document.getElementById('targetHouseholdInput'), joinHouseholdBtn = document.getElementById('joinHouseholdBtn');
 
-  const storeSelect = document.getElementById('storeSelect');
-  const toggleStoreForm = document.getElementById('toggleStoreForm');
-  const storeForm = document.getElementById('storeForm');
-  const newStoreInput = document.getElementById('newStoreInput');
-  const addStoreBtn = document.getElementById('addStoreBtn');
+  const storeSelect = document.getElementById('storeSelect'), toggleStoreForm = document.getElementById('toggleStoreForm'), storeForm = document.getElementById('storeForm'), newStoreInput = document.getElementById('newStoreInput'), addStoreBtn = document.getElementById('addStoreBtn');
+  const toggleCategoryForm = document.getElementById('toggleCategoryForm'), categoryForm = document.getElementById('categoryForm'), newCategoryInput = document.getElementById('newCategoryInput'), addCategoryBtn = document.getElementById('addCategoryBtn');
+  const openManageCategoriesBtn = document.getElementById('openManageCategoriesBtn'), manageCategoriesModal = document.getElementById('manageCategoriesModal'), manageCategoriesList = document.getElementById('manageCategoriesList'), manageCategoriesCloseBtn = document.getElementById('manageCategoriesCloseBtn');
 
-  const toggleCategoryForm = document.getElementById('toggleCategoryForm');
-  const categoryForm = document.getElementById('categoryForm');
-  const newCategoryInput = document.getElementById('newCategoryInput');
-  const addCategoryBtn = document.getElementById('addCategoryBtn');
-  
-  const openManageCategoriesBtn = document.getElementById('openManageCategoriesBtn');
-  const manageCategoriesModal = document.getElementById('manageCategoriesModal');
-  const manageCategoriesList = document.getElementById('manageCategoriesList');
-  const manageCategoriesCloseBtn = document.getElementById('manageCategoriesCloseBtn');
+  const itemInput = document.getElementById('itemInput'), itemQtyInput = document.getElementById('itemQtyInput'), itemCategorySelect = document.getElementById('itemCategorySelect'), addBtn = document.getElementById('addBtn'), micBtn = document.getElementById('micBtn'), masterSuggestions = document.getElementById('masterSuggestions');
+  const searchInput = document.getElementById('searchInput'), searchMicBtn = document.getElementById('searchMicBtn'), categoryFilterSelect = document.getElementById('categoryFilterSelect');
+  const shoppingListContainer = document.getElementById('shoppingListContainer'), keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn'), clearCompletedBtn = document.getElementById('clearCompletedBtn');
 
-  const itemInput = document.getElementById('itemInput');
-  const itemQtyInput = document.getElementById('itemQtyInput');
-  const itemCategorySelect = document.getElementById('itemCategorySelect');
-  const addBtn = document.getElementById('addBtn');
-  const micBtn = document.getElementById('micBtn');
-  const masterSuggestions = document.getElementById('masterSuggestions');
+  const pantryItemInput = document.getElementById('pantryItemInput'), pantryItemQtyInput = document.getElementById('pantryItemQtyInput'), pantryItemMinQtyInput = document.getElementById('pantryItemMinQtyInput'), pantryCategorySelect = document.getElementById('pantryCategorySelect'), addPantryBtn = document.getElementById('addPantryBtn');
+  const pantrySearchInput = document.getElementById('pantrySearchInput'), pantryCategoryFilterSelect = document.getElementById('pantryCategoryFilterSelect'), pantryListContainer = document.getElementById('pantryListContainer');
 
-  const searchInput = document.getElementById('searchInput');
-  const searchMicBtn = document.getElementById('searchMicBtn');
-  const categoryFilterSelect = document.getElementById('categoryFilterSelect');
-  const toggleSelectAllVisibleBtn = document.getElementById('toggleSelectAllVisibleBtn');
+  const editModal = document.getElementById('editModal'), editModalInput = document.getElementById('editModalInput'), editModalQtyInput = document.getElementById('editModalQtyInput'), editModalCategorySelect = document.getElementById('editModalCategorySelect'), editModalSaveBtn = document.getElementById('editModalSaveBtn'), editModalCancelBtn = document.getElementById('editModalCancelBtn');
+  const editPantryModal = document.getElementById('editPantryModal'), editPantryNameInput = document.getElementById('editPantryNameInput'), editPantryQtyInput = document.getElementById('editPantryQtyInput'), editPantryMinQtyInput = document.getElementById('editPantryMinQtyInput'), editPantryCategorySelect = document.getElementById('editPantryCategorySelect'), editPantrySaveBtn = document.getElementById('editPantrySaveBtn'), editPantryCancelBtn = document.getElementById('editPantryCancelBtn');
 
-  const shoppingListContainer = document.getElementById('shoppingListContainer');
-  const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
-  const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+  const openCategoryOrderBtn = document.getElementById('openCategoryOrderBtn'), catOrderModal = document.getElementById('catOrderModal'), catOrderList = document.getElementById('catOrderList'), catOrderSaveBtn = document.getElementById('catOrderSaveBtn'), catOrderCancelBtn = document.getElementById('catOrderCancelBtn');
+  const confirmModal = document.getElementById('confirmModal'), confirmModalTitle = document.getElementById('confirmModalTitle'), confirmModalText = document.getElementById('confirmModalText'), confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn'), confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
+  const loadingOverlay = document.getElementById('loadingOverlay'), loadingText = document.getElementById('loadingText');
 
-  const editModal = document.getElementById('editModal');
-  const editModalInput = document.getElementById('editModalInput');
-  const editModalQtyInput = document.getElementById('editModalQtyInput');
-  const editModalCategorySelect = document.getElementById('editModalCategorySelect');
-  const editModalSaveBtn = document.getElementById('editModalSaveBtn');
-  const editModalCancelBtn = document.getElementById('editModalCancelBtn');
+  // מעבר בין לשוניות
+  tabShoppingBtn.addEventListener('click', () => {
+    tabShoppingBtn.classList.add('active');
+    tabPantryBtn.classList.remove('active');
+    shoppingTabContent.classList.remove('hidden');
+    pantryTabContent.classList.add('hidden');
+  });
 
-  const openCategoryOrderBtn = document.getElementById('openCategoryOrderBtn');
-  const catOrderModal = document.getElementById('catOrderModal');
-  const catOrderList = document.getElementById('catOrderList');
-  const catOrderSaveBtn = document.getElementById('catOrderSaveBtn');
-  const catOrderCancelBtn = document.getElementById('catOrderCancelBtn');
+  tabPantryBtn.addEventListener('click', () => {
+    tabPantryBtn.classList.add('active');
+    tabShoppingBtn.classList.remove('active');
+    pantryTabContent.classList.remove('hidden');
+    shoppingTabContent.classList.add('hidden');
+  });
 
-  const confirmModal = document.getElementById('confirmModal');
-  const confirmModalTitle = document.getElementById('confirmModalTitle');
-  const confirmModalText = document.getElementById('confirmModalText');
-  const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
-  const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
-
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const loadingText = document.getElementById('loadingText');
-
-  function showLoading(message) {
-    loadingText.textContent = message;
-    loadingOverlay.classList.remove('hidden');
-  }
-
-  function hideLoading() {
-    loadingOverlay.classList.add('hidden');
-  }
+  function showLoading(msg) { loadingText.textContent = msg; loadingOverlay.classList.remove('hidden'); }
+  function hideLoading() { loadingOverlay.classList.add('hidden'); }
 
   function showCustomConfirm(title, text, showCancel = true) {
     return new Promise((resolve) => {
@@ -512,16 +412,8 @@
       confirmModalCancelBtn.style.display = showCancel ? 'block' : 'none';
       confirmModal.classList.remove('hidden');
 
-      const handleConfirm = () => {
-        cleanup();
-        resolve(true);
-      };
-
-      const handleCancel = () => {
-        cleanup();
-        resolve(false);
-      };
-
+      const handleConfirm = () => { cleanup(); resolve(true); };
+      const handleCancel = () => { cleanup(); resolve(false); };
       const cleanup = () => {
         confirmModal.classList.add('hidden');
         confirmModalConfirmBtn.removeEventListener('click', handleConfirm);
@@ -547,27 +439,25 @@
       listenToGlobalCategories();
       loadStores();
       loadMasterCatalogSuggestions();
+      listenToPantry();
     } else {
-      currentUser = null;
-      householdId = null;
+      currentUser = null; householdId = null;
       if (unsubscribeShoppingList) unsubscribeShoppingList();
       if (unsubscribeCategories) unsubscribeCategories();
-      appSection.classList.add('hidden');
-      loginSection.classList.remove('hidden');
+      if (unsubscribePantry) unsubscribePantry();
+      appSection.classList.add('hidden'); loginSection.classList.remove('hidden');
     }
   });
 
   async function initHousehold() {
     const userRef = doc(db, "users", currentUser.uid);
     const userDoc = await getDoc(userRef);
-
     if (userDoc.exists() && userDoc.data().householdId) {
       householdId = userDoc.data().householdId;
     } else {
       householdId = currentUser.uid;
       await setDoc(userRef, { householdId: householdId }, { merge: true });
     }
-
     myHouseholdIdDisplay.textContent = householdId;
   }
 
@@ -584,20 +474,221 @@
         opt.dataset.category = item.category || "כללי";
         masterSuggestions.appendChild(opt);
       });
-    } catch (e) {
-      console.error("Error loading master suggestions:", e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   itemInput.addEventListener('input', (e) => {
     const val = e.target.value.trim();
-    const opts = Array.from(masterSuggestions.options);
-    const match = opts.find(o => o.value.toLowerCase() === val.toLowerCase());
-    if (match && match.dataset.category) {
-      itemCategorySelect.value = match.dataset.category;
+    const match = Array.from(masterSuggestions.options).find(o => o.value.toLowerCase() === val.toLowerCase());
+    if (match && match.dataset.category) itemCategorySelect.value = match.dataset.category;
+  });
+
+  // ===== ניהול מלאי הבית (Pantry Logic) =====
+  function listenToPantry() {
+    if (unsubscribePantry) unsubscribePantry();
+    if (!householdId) return;
+
+    const pantryRef = collection(db, "households", householdId, "pantry");
+    unsubscribePantry = onSnapshot(pantryRef, (snapshot) => {
+      pantryItems = [];
+      snapshot.forEach(docSnap => pantryItems.push({ id: docSnap.id, ...docSnap.data() }));
+      renderPantryList();
+    });
+  }
+
+  async function addPantryItem() {
+    const name = pantryItemInput.value.trim();
+    const qty = parseFloat(pantryItemQtyInput.value) || 0;
+    const minQty = parseFloat(pantryItemMinQtyInput.value) || 1;
+    const cat = pantryCategorySelect.value;
+
+    if (!name || !householdId) return;
+
+    const docId = name.toLowerCase().replace(/\s+/g, '_');
+    await setDoc(doc(db, "households", householdId, "pantry", docId), {
+      name: name,
+      quantity: qty,
+      minQuantity: minQty,
+      category: cat,
+      monthlyConsumption: 0
+    }, { merge: true });
+
+    pantryItemInput.value = '';
+    pantryItemQtyInput.value = '1';
+    pantryItemMinQtyInput.value = '1';
+  }
+
+  addPantryBtn.addEventListener('click', addPantryItem);
+
+  async function updatePantryQuantity(item, delta) {
+    const newQty = Math.max(0, (item.quantity || 0) + delta);
+    const itemRef = doc(db, "households", householdId, "pantry", item.id);
+
+    const updateData = { quantity: newQty };
+    if (delta < 0) {
+      updateData.monthlyConsumption = (item.monthlyConsumption || 0) + Math.abs(delta);
+    }
+
+    await updateDoc(itemRef, updateData);
+
+    // בדיקת סף מינימום להוספה אוטומטית לרשימת הקניות
+    if (newQty <= (item.minQuantity || 1)) {
+      const existsInList = currentItems.some(i => i.name.trim().toLowerCase() === item.name.trim().toLowerCase());
+      if (!existsInList) {
+        await addDoc(collection(db, "activeList"), {
+          name: item.name,
+          category: item.category || "כללי",
+          qty: "השלמת מלאי",
+          completed: false,
+          householdId: householdId,
+          createdBy: currentUser.uid
+        });
+      }
+    }
+  }
+
+  function renderPantryList() {
+    pantryListContainer.innerHTML = '';
+    const searchTerm = pantrySearchInput.value.trim().toLowerCase();
+    const selectedCategory = pantryCategoryFilterSelect.value;
+
+    const filtered = pantryItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm);
+      const matchesCategory = selectedCategory === "ALL" || (item.category || "כללי") === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+      pantryListContainer.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">אין מוצרים במלאי</div>';
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(item => {
+      const cat = item.category || "כללי";
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+
+    allCategories.forEach(cat => {
+      if (grouped[cat] && grouped[cat].length > 0) {
+        const catHeader = document.createElement('div');
+        catHeader.className = 'category-header';
+        catHeader.innerHTML = `<span>${getCategoryEmoji(cat)} ${cat}</span><span>(${grouped[cat].length})</span>`;
+        pantryListContainer.appendChild(catHeader);
+
+        const ul = document.createElement('ul');
+        grouped[cat].forEach(item => {
+          const li = document.createElement('li');
+          const isLow = (item.quantity || 0) <= (item.minQuantity || 1);
+          if (isLow) li.classList.add('low-stock');
+
+          li.innerHTML = `
+            <div class="item-right">
+              <div class="item-details">
+                <strong>${item.name}</strong>
+                <span class="item-qty">במלאי: ${item.quantity || 0} | מינימום: ${item.minQuantity || 1}</span>
+                <span class="item-consumption">נצרך החודש: ${item.monthlyConsumption || 0}</span>
+              </div>
+            </div>
+            <div class="item-left">
+              <div class="qty-controls">
+                <button class="qty-btn btn-plus">+</button>
+                <button class="qty-btn btn-minus">-</button>
+              </div>
+              <button class="edit-btn">✏️</button>
+              <button class="delete-btn">✕</button>
+            </div>
+          `;
+
+          li.querySelector('.btn-plus').addEventListener('click', () => updatePantryQuantity(item, 1));
+          li.querySelector('.btn-minus').addEventListener('click', () => updatePantryQuantity(item, -1));
+          li.querySelector('.edit-btn').addEventListener('click', () => openPantryEditModal(item));
+          li.querySelector('.delete-btn').addEventListener('click', () => deleteDoc(doc(db, "households", householdId, "pantry", item.id)));
+
+          ul.appendChild(li);
+        });
+        pantryListContainer.appendChild(ul);
+      }
+    });
+  }
+
+  pantrySearchInput.addEventListener('input', renderPantryList);
+  pantryCategoryFilterSelect.addEventListener('change', renderPantryList);
+
+  function openPantryEditModal(item) {
+    activeEditingPantryItem = item;
+    editPantryNameInput.value = item.name;
+    editPantryQtyInput.value = item.quantity || 0;
+    editPantryMinQtyInput.value = item.minQuantity || 1;
+    editPantryCategorySelect.value = item.category || "כללי";
+    editPantryModal.classList.remove('hidden');
+  }
+
+  editPantryCancelBtn.addEventListener('click', () => editPantryModal.classList.add('hidden'));
+
+  editPantrySaveBtn.addEventListener('click', async () => {
+    if (!activeEditingPantryItem) return;
+    await updateDoc(doc(db, "households", householdId, "pantry", activeEditingPantryItem.id), {
+      name: editPantryNameInput.value.trim(),
+      quantity: parseFloat(editPantryQtyInput.value) || 0,
+      minQuantity: parseFloat(editPantryMinQtyInput.value) || 1,
+      category: editPantryCategorySelect.value
+    });
+    editPantryModal.classList.add('hidden');
+  });
+
+  // ===== סיום קנייה ועדכון מלאי אוטומטי =====
+  clearCompletedBtn.addEventListener('click', async () => {
+    const completed = currentItems.filter(i => i.completed);
+    if (!completed.length) {
+      await showCustomConfirm("הודעה", "אין מוצרים מסומנים למחיקה.", false);
+      return;
+    }
+    
+    const isConfirmed = await showCustomConfirm(
+      "סיום קנייה", 
+      `לסיים קנייה, למחוק ${completed.length} מוצרים מהרשימה ולהוסיף אותם למלאי הבית?`
+    );
+
+    if (isConfirmed) {
+      showLoading("מעדכן מלאי מסיים קנייה...");
+      try {
+        const batch = writeBatch(db);
+
+        for (const item of completed) {
+          batch.delete(doc(db, "activeList", item.id));
+
+          const docId = item.name.trim().toLowerCase().replace(/\s+/g, '_');
+          const pantryRef = doc(db, "households", householdId, "pantry", docId);
+          const pantrySnap = await getDoc(pantryRef);
+
+          const addedQty = parseFloat(item.qty) || 1;
+
+          if (pantrySnap.exists()) {
+            const curData = pantrySnap.data();
+            batch.update(pantryRef, { quantity: (curData.quantity || 0) + addedQty });
+          } else {
+            batch.set(pantryRef, {
+              name: item.name.trim(),
+              category: item.category || "כללי",
+              quantity: addedQty,
+              minQuantity: 1,
+              monthlyConsumption: 0
+            });
+          }
+        }
+
+        await batch.commit();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        hideLoading();
+      }
     }
   });
 
+  // ===== זיהוי דיבור (Speech Recognition) =====
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -617,6 +708,7 @@
     searchInput.addEventListener('focus', releaseMicButtons);
     searchInput.addEventListener('click', releaseMicButtons);
 
+    // --- ההקלטה הקולית להוספת מוצר ---
     const addItemRecognition = new SpeechRecognition();
     addItemRecognition.lang = 'he-IL';
     addItemRecognition.continuous = false;
@@ -626,24 +718,15 @@
       e.stopPropagation();
       micBtn.disabled = true;
       micBtn.style.background = '#ffebee';
-      try {
-        addItemRecognition.start();
-      } catch (err) {
-        releaseMicButtons();
-      }
+      try { addItemRecognition.start(); } catch (err) { releaseMicButtons(); }
     });
 
     addItemRecognition.onresult = (event) => {
       let transcript = '';
-      let isFinal = false;
-
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          isFinal = true;
-        }
       }
-      
+
       if (transcript.includes('סיים')) {
         transcript = transcript.replace(/סיים/g, '').trim();
         itemInput.value = transcript;
@@ -655,16 +738,12 @@
 
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
-
-      if (isFinal) {
-        addItemRecognition.stop();
-        releaseMicButtons();
-      }
     };
 
-    addItemRecognition.onerror = () => { releaseMicButtons(); };
-    addItemRecognition.onend = () => { releaseMicButtons(); };
+    addItemRecognition.onerror = releaseMicButtons;
+    addItemRecognition.onend = releaseMicButtons;
 
+    // --- ההקלטה הקולית לחיפוש ---
     const searchRecognition = new SpeechRecognition();
     searchRecognition.lang = 'he-IL';
     searchRecognition.continuous = false;
@@ -674,22 +753,13 @@
       e.stopPropagation();
       searchMicBtn.disabled = true;
       searchMicBtn.style.opacity = '0.5';
-      try {
-        searchRecognition.start();
-      } catch (err) {
-        releaseMicButtons();
-      }
+      try { searchRecognition.start(); } catch (err) { releaseMicButtons(); }
     });
 
     searchRecognition.onresult = (event) => {
       let transcript = '';
-      let isFinal = false;
-
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          isFinal = true;
-        }
       }
 
       if (transcript.includes('סיים')) {
@@ -700,19 +770,13 @@
         releaseMicButtons();
         return;
       }
-      
+
       searchInput.value = transcript;
       searchInput.dispatchEvent(new Event('input'));
-
-      if (isFinal) {
-        searchRecognition.stop();
-        releaseMicButtons();
-      }
     };
 
-    searchRecognition.onerror = () => { releaseMicButtons(); };
-    searchRecognition.onend = () => { releaseMicButtons(); };
-
+    searchRecognition.onerror = releaseMicButtons;
+    searchRecognition.onend = releaseMicButtons;
   } else {
     micBtn.style.display = 'none';
     searchMicBtn.style.display = 'none';
@@ -731,197 +795,126 @@
     }
 
     await addDoc(collection(db, "activeList"), { 
-      name: text, 
-      qty: qty,
-      category: category,
-      completed: false, 
-      householdId: householdId,
-      createdBy: currentUser.uid
+      name: text, qty: qty, category: category, completed: false, householdId: householdId, createdBy: currentUser.uid
     });
 
-    itemInput.value = '';
-    itemQtyInput.value = '';
+    itemInput.value = ''; itemQtyInput.value = '';
   }
 
   addBtn.addEventListener('click', addItemToDatabase);
-
-  itemInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addItemToDatabase();
-    }
-  });
-
-  itemQtyInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addItemToDatabase();
-    }
-  });
+  itemInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addItemToDatabase(); } });
+  itemQtyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addItemToDatabase(); } });
 
   saveMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
     if (currentItems.length === 0) {
-      await showCustomConfirm("הודעה", "הרשימה הנוכחית ריקה. הוסף מוצרים לפני השמירה כמאגר קבוע.", false);
+      await showCustomConfirm("הודעה", "הרשימה הנוכחית ריקה.", false);
       return;
     }
 
-    const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית (כולל מצב ה-V של המוצרים) כמאגר קבוע?");
+    const isConfirmed = await showCustomConfirm("שמירת מאגר", "האם לשמור את הרשימה הנוכחית כמאגר קבוע?");
     if (isConfirmed) {
-      showLoading("שומר את המוצרים למאגר הקבוע...");
+      showLoading("שומר למאגר קבוע...");
       try {
         const catalogRef = collection(db, "households", householdId, "masterCatalog");
         const existingDocs = await getDocs(catalogRef);
-
         const batch = writeBatch(db);
-        existingDocs.forEach(docSnap => {
-          batch.delete(doc(db, "households", householdId, "masterCatalog", docSnap.id));
-        });
+        existingDocs.forEach(docSnap => batch.delete(doc(db, "households", householdId, "masterCatalog", docSnap.id)));
 
         const uniqueItemsMap = new Map();
         for (const item of currentItems) {
           const key = item.name.trim().toLowerCase();
           if (!uniqueItemsMap.has(key)) {
-            uniqueItemsMap.set(key, {
-              name: item.name.trim(),
-              category: item.category || "כללי",
-              completed: item.completed || false
-            });
+            uniqueItemsMap.set(key, { name: item.name.trim(), category: item.category || "כללי", completed: item.completed || false });
           }
         }
 
         for (const item of uniqueItemsMap.values()) {
-          const newDocRef = doc(catalogRef);
-          batch.set(newDocRef, item);
+          batch.set(doc(catalogRef), item);
         }
 
         await batch.commit();
         hideLoading();
         await loadMasterCatalogSuggestions();
-        await showCustomConfirm("הצלחה", `המאגר הקבוע נשמר בהצלחה! (נשמרו ${uniqueItemsMap.size} מוצרים ייחודיים עם מצב הסימון שלהם)`, false);
-      } catch (err) {
-        hideLoading();
-        console.error(err);
-        await showCustomConfirm("שגיאה", "שגיאה בשמירת המאגר.", false);
-      }
+        await showCustomConfirm("הצלחה", "המאגר הקבוע נשמר בהצלחה!", false);
+      } catch (err) { hideLoading(); console.error(err); }
     }
   });
 
   loadMasterBtn.addEventListener('click', async () => {
     if (!householdId) return;
-
     try {
       const catalogRef = collection(db, "households", householdId, "masterCatalog");
       const catalogSnapshot = await getDocs(catalogRef);
 
       if (catalogSnapshot.empty) {
-        await showCustomConfirm("הודעה", "לא נמצא מאגר קבוע שמור. השתמש בכפתור השמירה כדי ליצור אחד.", false);
+        await showCustomConfirm("הודעה", "לא נמצא מאגר קבוע שמור.", false);
         return;
       }
 
-      const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות? (מצב ה-V של המוצרים ייטען כפי שנשמר)");
+      const isConfirmed = await showCustomConfirm("טעינת מאגר", "האם לטעון את המאגר הקבוע לרשימת הקניות?");
       if (isConfirmed) {
-        showLoading("קורא מתוך המאגר הקבוע ומעדכן את רשימת הקניות...");
+        showLoading("טוען מאגר...");
         const existingNames = new Set(currentItems.map(i => i.name.trim().toLowerCase()));
         let addedCount = 0;
-
         const batch = writeBatch(db);
+
         for (const docSnap of catalogSnapshot.docs) {
           const catItem = docSnap.data();
           const cleanName = catItem.name.trim().toLowerCase();
-
           if (!existingNames.has(cleanName)) {
-            const newDocRef = doc(collection(db, "activeList"));
-            batch.set(newDocRef, {
-              name: catItem.name,
-              category: catItem.category,
-              completed: catItem.completed || false,
-              householdId: householdId,
-              createdBy: currentUser.uid
+            batch.set(doc(collection(db, "activeList")), {
+              name: catItem.name, category: catItem.category, completed: catItem.completed || false, householdId: householdId, createdBy: currentUser.uid
             });
-            existingNames.add(cleanName);
-            addedCount++;
+            existingNames.add(cleanName); addedCount++;
           }
         }
 
-        if (addedCount > 0) {
-          await batch.commit();
-        }
-
-        clearCompletedBtn.disabled = true;
-
+        if (addedCount > 0) await batch.commit();
         hideLoading();
-        if (addedCount > 0) {
-          await showCustomConfirm("הצלחה", `נטענו ${addedCount} מוצרים חדשים מהמאגר הקבוע!`, false);
-        } else {
-          await showCustomConfirm("הודעה", "כל המוצרים מהמאגר הקבוע כבר קיימים ברשימה הנוכחית.", false);
-        }
+        await showCustomConfirm("הצלחה", `נטענו ${addedCount} מוצרים חדשים!`, false);
       }
-    } catch (err) {
-      hideLoading();
-      console.error(err);
-      await showCustomConfirm("שגיאה", "שגיאה בטעינת המאגר.", false);
-    }
+    } catch (err) { hideLoading(); console.error(err); }
   });
 
   toggleShareForm.addEventListener('click', () => shareForm.classList.toggle('active'));
 
   migrateOldItemsBtn.addEventListener('click', async () => {
     if (!currentUser || !householdId) return;
-
     try {
-      showLoading("משייך את המוצרים הקיימים לרשימה המשותפת...");
+      showLoading("משייך מוצרים...");
       const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
       const snapshot = await getDocs(q);
 
-      if (snapshot.empty) {
-        hideLoading();
-        await showCustomConfirm("הודעה", "לא נמצאו מוצרים ישנים לשיוך.", false);
-        return;
-      }
+      if (snapshot.empty) { hideLoading(); await showCustomConfirm("הודעה", "לא נמצאו מוצרים ישנים.", false); return; }
 
       const batch = writeBatch(db);
-      snapshot.forEach(docSnap => {
-        batch.update(doc(db, "activeList", docSnap.id), { householdId: householdId });
-      });
-
+      snapshot.forEach(docSnap => batch.update(doc(db, "activeList", docSnap.id), { householdId: householdId }));
       await batch.commit();
 
       hideLoading();
-      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
+      await showCustomConfirm("הצלחה", "המוצרים שויכו בהצלחה!", false);
       shareForm.classList.remove('active');
-    } catch (err) {
-      hideLoading();
-      console.error(err);
-      await showCustomConfirm("שגיאה", "אירעה שגיאה במיזוג המוצרים.", false);
-    }
+    } catch (err) { hideLoading(); console.error(err); }
   });
 
   joinHouseholdBtn.addEventListener('click', async () => {
     const targetCode = targetHouseholdInput.value.trim();
     if (!targetCode) return;
-
-    const isConfirmed = await showCustomConfirm("חיבור לרשימה", "האם ברצונך להתחבר לרשימה זו? כל המוצרים שתראה מכאן ואילך יהיו משותפים.");
+    const isConfirmed = await showCustomConfirm("חיבור לרשימה", "האם להתחבר לרשימה זו?");
     if (isConfirmed) {
       householdId = targetCode;
       await setDoc(doc(db, "users", currentUser.uid), { householdId: householdId }, { merge: true });
       myHouseholdIdDisplay.textContent = householdId;
-      targetHouseholdInput.value = '';
-      shareForm.classList.remove('active');
-      listenToShoppingList();
-      loadMasterCatalogSuggestions();
+      targetHouseholdInput.value = ''; shareForm.classList.remove('active');
+      listenToShoppingList(); listenToPantry(); loadMasterCatalogSuggestions();
     }
   });
 
   function listenToGlobalCategories() {
-    const catQuery = collection(db, "globalCategories");
-    unsubscribeCategories = onSnapshot(catQuery, (snapshot) => {
-      globalCatDocs = [];
-      const customCats = [];
-      snapshot.forEach(docSnap => {
-        globalCatDocs.push({ id: docSnap.id, name: docSnap.data().name });
-        customCats.push(docSnap.data().name);
-      });
+    unsubscribeCategories = onSnapshot(collection(db, "globalCategories"), (snapshot) => {
+      globalCatDocs = []; const customCats = [];
+      snapshot.forEach(docSnap => { globalCatDocs.push({ id: docSnap.id, name: docSnap.data().name }); customCats.push(docSnap.data().name); });
       allCategories = Array.from(new Set([...defaultCategories, ...customCats]));
       populateCategoryDropdowns();
     });
@@ -929,163 +922,89 @@
 
   function populateCategoryDropdowns() {
     const selectedFilter = categoryFilterSelect.value;
-    
-    itemCategorySelect.innerHTML = '';
-    editModalCategorySelect.innerHTML = '';
-    categoryFilterSelect.innerHTML = '<option value="ALL">כל הקטגוריות</option>';
+    const pantryFilter = pantryCategoryFilterSelect.value;
+
+    itemCategorySelect.innerHTML = ''; editModalCategorySelect.innerHTML = ''; categoryFilterSelect.innerHTML = '<option value="ALL">כל הקטגוריות</option>';
+    pantryCategorySelect.innerHTML = ''; editPantryCategorySelect.innerHTML = ''; pantryCategoryFilterSelect.innerHTML = '<option value="ALL">כל הקטגוריות</option>';
 
     allCategories.forEach(cat => {
       const icon = getCategoryEmoji(cat);
-      itemCategorySelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
-      editModalCategorySelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
-      categoryFilterSelect.innerHTML += `<option value="${cat}">${icon} ${cat}</option>`;
+      const optHtml = `<option value="${cat}">${icon} ${cat}</option>`;
+      itemCategorySelect.innerHTML += optHtml; editModalCategorySelect.innerHTML += optHtml; categoryFilterSelect.innerHTML += optHtml;
+      pantryCategorySelect.innerHTML += optHtml; editPantryCategorySelect.innerHTML += optHtml; pantryCategoryFilterSelect.innerHTML += optHtml;
     });
 
     categoryFilterSelect.value = selectedFilter || "ALL";
+    pantryCategoryFilterSelect.value = pantryFilter || "ALL";
   }
 
   toggleCategoryForm.addEventListener('click', () => categoryForm.classList.toggle('active'));
-  
   addCategoryBtn.addEventListener('click', async () => {
     const catName = newCategoryInput.value.trim();
     if (!catName) return;
-
-    if (!allCategories.includes(catName)) {
-      await addDoc(collection(db, "globalCategories"), { name: catName });
-    }
-
-    newCategoryInput.value = '';
-    categoryForm.classList.remove('active');
+    if (!allCategories.includes(catName)) await addDoc(collection(db, "globalCategories"), { name: catName });
+    newCategoryInput.value = ''; categoryForm.classList.remove('active');
   });
 
-  openManageCategoriesBtn.addEventListener('click', () => {
-    renderManageCategoriesList();
-    manageCategoriesModal.classList.remove('hidden');
-  });
-
+  openManageCategoriesBtn.addEventListener('click', () => { renderManageCategoriesList(); manageCategoriesModal.classList.remove('hidden'); });
   manageCategoriesCloseBtn.addEventListener('click', () => manageCategoriesModal.classList.add('hidden'));
 
   function renderManageCategoriesList() {
     manageCategoriesList.innerHTML = '';
     allCategories.forEach(cat => {
       const isDefault = defaultCategories.includes(cat);
-      const icon = getCategoryEmoji(cat);
       const li = document.createElement('li');
       li.className = 'cat-order-item';
-      
-      const span = document.createElement('span');
-      span.innerHTML = `${icon} ${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}`;
-      
-      const btnGroup = document.createElement('div');
-      
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'edit-btn';
-      editBtn.style.cssText = 'width:auto; padding: 4px 8px;';
-      editBtn.textContent = '✏️';
-      editBtn.addEventListener('click', () => handleEditCategory(cat));
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.style.cssText = 'width:auto; padding: 4px 8px;';
-      deleteBtn.textContent = '🗑️';
-      deleteBtn.addEventListener('click', () => handleDeleteCategory(cat));
-
-      btnGroup.appendChild(editBtn);
-      btnGroup.appendChild(deleteBtn);
-
-      li.appendChild(span);
-      li.appendChild(btnGroup);
+      li.innerHTML = `
+        <span>${getCategoryEmoji(cat)} ${cat} ${isDefault ? '<small style="color:#888;">(ברירת מחדל)</small>' : ''}</span>
+        <div>
+          <button type="button" class="edit-btn" style="width:auto; padding: 4px 8px;">✏️</button>
+          <button type="button" class="delete-btn" style="width:auto; padding: 4px 8px;">🗑️</button>
+        </div>
+      `;
+      li.querySelector('.edit-btn').addEventListener('click', () => handleEditCategory(cat));
+      li.querySelector('.delete-btn').addEventListener('click', () => handleDeleteCategory(cat));
       manageCategoriesList.appendChild(li);
     });
   }
 
   async function handleEditCategory(oldName) {
     const newName = prompt("הכנס שם קטגוריה חדש:", oldName);
-    if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
-
+    if (!newName || !newName.trim() || newName.trim() === oldName) return;
     const trimmedNewName = newName.trim();
-    showLoading("מעדכן את שם הקטגוריה...");
-
+    showLoading("מעדכן קטגוריה...");
     try {
       const batch = writeBatch(db);
-
       const docObj = globalCatDocs.find(d => d.name === oldName);
-      if (docObj) {
-        batch.update(doc(db, "globalCategories", docObj.id), { name: trimmedNewName });
-      } else {
-        const newCatRef = doc(collection(db, "globalCategories"));
-        batch.set(newCatRef, { name: trimmedNewName });
-      }
+      if (docObj) batch.update(doc(db, "globalCategories", docObj.id), { name: trimmedNewName });
 
-      const activeQ = query(collection(db, "activeList"), where("category", "==", oldName));
-      const activeSnap = await getDocs(activeQ);
-      activeSnap.forEach(docSnap => {
-        batch.update(doc(db, "activeList", docSnap.id), { category: trimmedNewName });
-      });
-
-      if (householdId) {
-        const masterRef = collection(db, "households", householdId, "masterCatalog");
-        const masterQ = query(masterRef, where("category", "==", oldName));
-        const masterSnap = await getDocs(masterQ);
-        masterSnap.forEach(docSnap => {
-          batch.update(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: trimmedNewName });
-        });
-      }
+      const activeSnap = await getDocs(query(collection(db, "activeList"), where("category", "==", oldName)));
+      activeSnap.forEach(docSnap => batch.update(doc(db, "activeList", docSnap.id), { category: trimmedNewName }));
 
       await batch.commit();
-
       hideLoading();
       renderManageCategoriesList();
-    } catch (err) {
-      hideLoading();
-      console.error(err);
-      await showCustomConfirm("שגיאה", "שגיאה בעדכון הקטגוריה.", false);
-    }
+    } catch (err) { hideLoading(); console.error(err); }
   }
 
   async function handleDeleteCategory(catName) {
-    const confirmDelete = await showCustomConfirm("מחיקת קטגוריה", `האם למחוק את הקטגוריה "${catName}"? מוצרים המשויכים אליה יועברו לקטגוריה "כללי".`);
+    const confirmDelete = await showCustomConfirm("מחיקת קטגוריה", `האם למחוק את הקטגוריה "${catName}"?`);
     if (!confirmDelete) return;
-
-    showLoading("מוחק את הקטגוריה ומעדכן מוצרים...");
-
+    showLoading("מוחק קטגוריה...");
     try {
       const batch = writeBatch(db);
-
       const docObj = globalCatDocs.find(d => d.name === catName);
-      if (docObj) {
-        batch.delete(doc(db, "globalCategories", docObj.id));
-      }
+      if (docObj) batch.delete(doc(db, "globalCategories", docObj.id));
 
-      const activeQ = query(collection(db, "activeList"), where("category", "==", catName));
-      const activeSnap = await getDocs(activeQ);
-      activeSnap.forEach(docSnap => {
-        batch.update(doc(db, "activeList", docSnap.id), { category: "כללי" });
-      });
-
-      if (householdId) {
-        const masterRef = collection(db, "households", householdId, "masterCatalog");
-        const masterQ = query(masterRef, where("category", "==", catName));
-        const masterSnap = await getDocs(masterQ);
-        masterSnap.forEach(docSnap => {
-          batch.update(doc(db, "households", householdId, "masterCatalog", docSnap.id), { category: "כללי" });
-        });
-      }
+      const activeSnap = await getDocs(query(collection(db, "activeList"), where("category", "==", catName)));
+      activeSnap.forEach(docSnap => batch.update(doc(db, "activeList", docSnap.id), { category: "כללי" }));
 
       await batch.commit();
-
       allCategories = allCategories.filter(c => c !== catName);
       populateCategoryDropdowns();
-      
       hideLoading();
       renderManageCategoriesList();
-    } catch (err) {
-      hideLoading();
-      console.error(err);
-      await showCustomConfirm("שגיאה", "שגיאה במחיקת הקטגוריה.", false);
-    }
+    } catch (err) { hideLoading(); console.error(err); }
   }
 
   async function loadStores() {
@@ -1094,14 +1013,8 @@
     let stores = [];
 
     if (snapshot.empty) {
-      const defaults = [
-        { id: "osher_ad", name: "אושר עד" },
-        { id: "shufersal", name: "שופרסל" }
-      ];
-      for (const s of defaults) {
-        await setDoc(doc(db, "storeList", s.id), { name: s.name });
-        stores.push(s);
-      }
+      const defaults = [{ id: "osher_ad", name: "אושר עד" }, { id: "shufersal", name: "שופרסל" }];
+      for (const s of defaults) { await setDoc(doc(db, "storeList", s.id), { name: s.name }); stores.push(s); }
     } else {
       snapshot.forEach(docSnap => stores.push({ id: docSnap.id, name: docSnap.data().name }));
     }
@@ -1109,8 +1022,7 @@
     storeSelect.innerHTML = '';
     stores.forEach((store, idx) => {
       const opt = document.createElement('option');
-      opt.value = store.id;
-      opt.textContent = store.name;
+      opt.value = store.id; opt.textContent = store.name;
       if (idx === 0) opt.selected = true;
       storeSelect.appendChild(opt);
     });
@@ -1120,24 +1032,20 @@
   }
 
   toggleStoreForm.addEventListener('click', () => storeForm.classList.toggle('active'));
-
   addStoreBtn.addEventListener('click', async () => {
     const name = newStoreInput.value.trim();
     if (!name) return;
     const storeId = "store_" + Date.now();
     await setDoc(doc(db, "storeList", storeId), { name });
-    newStoreInput.value = '';
-    storeForm.classList.remove('active');
+    newStoreInput.value = ''; storeForm.classList.remove('active');
     await loadStores();
-    storeSelect.value = storeId;
-    currentStore = storeId;
+    storeSelect.value = storeId; currentStore = storeId;
     listenToShoppingList();
   });
 
   async function loadCategoryOrder() {
     if (!currentStore || !householdId) return;
     const orderDoc = await getDoc(doc(db, "households", householdId, "stores", currentStore, "config", "categoryOrder"));
-    
     if (orderDoc.exists() && orderDoc.data().order) {
       const savedOrder = orderDoc.data().order;
       const missing = allCategories.filter(c => !savedOrder.includes(c));
@@ -1152,7 +1060,6 @@
     if (!householdId) return;
 
     const q = query(collection(db, "activeList"), where("householdId", "==", householdId));
-    
     unsubscribeShoppingList = onSnapshot(q, async (snapshot) => {
       await loadCategoryOrder();
       currentItems = [];
@@ -1161,24 +1068,19 @@
     });
   }
 
-  function getVisibleItems() {
+  function renderListByCategories() {
+    shoppingListContainer.innerHTML = '';
     const searchTerm = searchInput.value.trim().toLowerCase();
     const selectedCategory = categoryFilterSelect.value;
 
-    return currentItems.filter(item => {
+    const filteredItems = currentItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm);
-      const itemCategory = item.category || "כללי";
-      const matchesCategory = selectedCategory === "ALL" || itemCategory === selectedCategory;
+      const matchesCategory = selectedCategory === "ALL" || (item.category || "כללי") === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }
-
-  function renderListByCategories() {
-    shoppingListContainer.innerHTML = '';
-    const filteredItems = getVisibleItems();
 
     if (filteredItems.length === 0) {
-      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchInput.value.trim() || categoryFilterSelect.value !== 'ALL' ? 'לא נמצאו מוצרים התואמים לסינון' : 'הרשימה ריקה'}</div>`;
+      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">הרשימה ריקה</div>`;
       return;
     }
 
@@ -1193,10 +1095,9 @@
       if (grouped[cat] && grouped[cat].length > 0) {
         grouped[cat].sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
-        const catIcon = getCategoryEmoji(cat);
         const catHeader = document.createElement('div');
         catHeader.className = 'category-header';
-        catHeader.innerHTML = `<span>${catIcon} ${cat}</span><span>(${grouped[cat].length})</span>`;
+        catHeader.innerHTML = `<span>${getCategoryEmoji(cat)} ${cat}</span><span>(${grouped[cat].length})</span>`;
         shoppingListContainer.appendChild(catHeader);
 
         const ul = document.createElement('ul');
@@ -1222,7 +1123,6 @@
           li.querySelector('.checkbox').addEventListener('change', (e) => {
             updateDoc(doc(db, "activeList", item.id), { completed: e.target.checked });
           });
-
           li.querySelector('.edit-btn').addEventListener('click', () => openEditModal(item));
           li.querySelector('.delete-btn').addEventListener('click', () => deleteDoc(doc(db, "activeList", item.id)));
 
@@ -1233,37 +1133,8 @@
     });
   }
 
-  toggleSelectAllVisibleBtn.addEventListener('click', async () => {
-    const visibleItems = getVisibleItems();
-    if (visibleItems.length === 0) return;
-
-    const hasUnchecked = visibleItems.some(item => !item.completed);
-    const targetState = hasUnchecked;
-
-    showLoading(targetState ? "מסמן את כל המוצרים המוצגים..." : "מבטל סימון לכל המוצרים המוצגים...");
-
-    try {
-      const batch = writeBatch(db);
-      visibleItems.forEach(item => {
-        if (item.completed !== targetState) {
-          batch.update(doc(db, "activeList", item.id), { completed: targetState });
-        }
-      });
-      await batch.commit();
-    } catch (err) {
-      console.error("שגיאה בעדכון גורף של המוצרים:", err);
-    } finally {
-      hideLoading();
-    }
-  });
-
-  searchInput.addEventListener('input', () => {
-    renderListByCategories();
-  });
-
-  categoryFilterSelect.addEventListener('change', () => {
-    renderListByCategories();
-  });
+  searchInput.addEventListener('input', renderListByCategories);
+  categoryFilterSelect.addEventListener('change', renderListByCategories);
 
   function openEditModal(item) {
     activeEditingItem = item;
@@ -1274,38 +1145,26 @@
   }
 
   editModalCancelBtn.addEventListener('click', () => editModal.classList.add('hidden'));
-
   editModalSaveBtn.addEventListener('click', async () => {
     if (!activeEditingItem) return;
-    const newName = editModalInput.value.trim();
-    const newQty = editModalQtyInput.value.trim();
-    const newCat = editModalCategorySelect.value;
-
-    if (newName) {
-      await updateDoc(doc(db, "activeList", activeEditingItem.id), {
-        name: newName,
-        qty: newQty,
-        category: newCat
-      });
-    }
+    await updateDoc(doc(db, "activeList", activeEditingItem.id), {
+      name: editModalInput.value.trim(),
+      qty: editModalQtyInput.value.trim(),
+      category: editModalCategorySelect.value
+    });
     editModal.classList.add('hidden');
   });
 
-  openCategoryOrderBtn.addEventListener('click', () => {
-    renderCategoryOrderList();
-    catOrderModal.classList.remove('hidden');
-  });
-
+  openCategoryOrderBtn.addEventListener('click', () => { renderCategoryOrderList(); catOrderModal.classList.remove('hidden'); });
   catOrderCancelBtn.addEventListener('click', () => catOrderModal.classList.add('hidden'));
 
   function renderCategoryOrderList() {
     catOrderList.innerHTML = '';
     categoryOrder.forEach((cat, idx) => {
-      const icon = getCategoryEmoji(cat);
       const li = document.createElement('li');
       li.className = 'cat-order-item';
       li.innerHTML = `
-        <span>${idx + 1}. ${icon} ${cat}</span>
+        <span>${idx + 1}. ${getCategoryEmoji(cat)} ${cat}</span>
         <div>
           <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, -1)">⬆️</button>
           <button type="button" style="width:auto; padding: 4px 8px;" onclick="moveCat(${idx}, 1)">⬇️</button>
@@ -1326,9 +1185,7 @@
 
   catOrderSaveBtn.addEventListener('click', async () => {
     if (householdId && currentStore) {
-      await setDoc(doc(db, "households", householdId, "stores", currentStore, "config", "categoryOrder"), {
-        order: categoryOrder
-      });
+      await setDoc(doc(db, "households", householdId, "stores", currentStore, "config", "categoryOrder"), { order: categoryOrder });
       renderListByCategories();
     }
     catOrderModal.classList.add('hidden');
@@ -1339,67 +1196,19 @@
     const completed = currentItems.filter(i => i.completed);
 
     if (!completed.length) {
-      await showCustomConfirm("הודעה", "לא סומנו מוצרים חסרים. סמן ב-V את המוצרים שברצונך לקנות.", false);
+      await showCustomConfirm("הודעה", "לא סומנו מוצרים חסרים.", false);
       return;
     }
 
-    const isConfirmed = await showCustomConfirm(
-      "יציאה לסופר", 
-      `להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו, וישארו ${completed.length} מוצרים לקנייה.`
-    );
-
+    const isConfirmed = await showCustomConfirm("יציאה לסופר", `להכין רשימה לסופר? ${uncompleted.length} מוצרים שלא סומנו יימחקו.`);
     if (isConfirmed) {
-      showLoading("מעדכן את הרשימה לקנייה...");
-
+      showLoading("מעדכן רשימה...");
       try {
         const batch = writeBatch(db);
-
-        uncompleted.forEach(item => {
-          batch.delete(doc(db, "activeList", item.id));
-        });
-
-        completed.forEach(item => {
-          batch.update(doc(db, "activeList", item.id), { completed: false });
-        });
-
-        batch.commit().catch(err => console.log("סנכרון לרשת ייעשה כשתתחבר מחדש:", err));
-
-        clearCompletedBtn.disabled = false;
-
-      } catch (err) {
-        console.error(err);
-      } finally {
-        hideLoading();
-      }
-    }
-  });
-
-  clearCompletedBtn.addEventListener('click', async () => {
-    const completed = currentItems.filter(i => i.completed);
-    if (!completed.length) {
-      await showCustomConfirm("הודעה", "אין מוצרים מסומנים למחיקה.", false);
-      return;
-    }
-    
-    const isConfirmed = await showCustomConfirm(
-      "סיום קנייה", 
-      `לסיים קנייה ולמחוק ${completed.length} מוצרים?`
-    );
-
-    if (isConfirmed) {
-      showLoading("מוחק את המוצרים המסומנים ומסיים את הקנייה...");
-      try {
-        const batch = writeBatch(db);
-        completed.forEach(item => {
-          batch.delete(doc(db, "activeList", item.id));
-        });
-
+        uncompleted.forEach(item => batch.delete(doc(db, "activeList", item.id)));
+        completed.forEach(item => batch.update(doc(db, "activeList", item.id), { completed: false }));
         await batch.commit();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        hideLoading();
-      }
+      } catch (err) { console.error(err); } finally { hideLoading(); }
     }
   });
 
