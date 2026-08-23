@@ -201,7 +201,10 @@
         </div>
       </div>
 
-      <button id="openCategoryOrderBtn" class="btn-secondary">🗺️ שנה סדר סיבוב בסופר</button>
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <button id="openCategoryOrderBtn" class="btn-secondary" style="margin-top: 0; flex: 2;">🗺️ שנה סדר סיבוב בסופר</button>
+        <button id="toggleSelectAllBtn" class="btn-secondary" style="margin-top: 0; flex: 1; background-color: #5c6bc0;">☑️ סמן/בטל הכל</button>
+      </div>
 
       <div class="filter-container">
         <select id="categoryFilterSelect"><option value="ALL">כל הקטגוריות</option></select>
@@ -222,6 +225,10 @@
 
     <!-- ===== לשונית 2: מלאי הבית ===== -->
     <div id="pantryTabContent" class="hidden">
+      <div style="margin-bottom: 15px;">
+        <button id="importAllShoppingToPantryBtn" class="btn-info" style="margin: 0; font-size: 13px;">📥 הכנס את כל פריטי הקניות למלאי</button>
+      </div>
+
       <div class="field">
         <label for="pantryItemInput">הוסף מוצר למלאי הבית:</label>
         <div class="add-item-container">
@@ -383,9 +390,11 @@
   const itemInput = document.getElementById('itemInput'), itemQtyInput = document.getElementById('itemQtyInput'), itemCategorySelect = document.getElementById('itemCategorySelect'), addBtn = document.getElementById('addBtn'), micBtn = document.getElementById('micBtn'), masterSuggestions = document.getElementById('masterSuggestions');
   const searchInput = document.getElementById('searchInput'), searchMicBtn = document.getElementById('searchMicBtn'), categoryFilterSelect = document.getElementById('categoryFilterSelect');
   const shoppingListContainer = document.getElementById('shoppingListContainer'), keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn'), clearCompletedBtn = document.getElementById('clearCompletedBtn');
+  const toggleSelectAllBtn = document.getElementById('toggleSelectAllBtn');
 
   const pantryItemInput = document.getElementById('pantryItemInput'), pantryItemQtyInput = document.getElementById('pantryItemQtyInput'), pantryItemMinQtyInput = document.getElementById('pantryItemMinQtyInput'), pantryCategorySelect = document.getElementById('pantryCategorySelect'), addPantryBtn = document.getElementById('addPantryBtn');
   const pantrySearchInput = document.getElementById('pantrySearchInput'), pantryCategoryFilterSelect = document.getElementById('pantryCategoryFilterSelect'), pantryListContainer = document.getElementById('pantryListContainer');
+  const importAllShoppingToPantryBtn = document.getElementById('importAllShoppingToPantryBtn');
 
   const editModal = document.getElementById('editModal'), editModalInput = document.getElementById('editModalInput'), editModalQtyInput = document.getElementById('editModalQtyInput'), editModalCategorySelect = document.getElementById('editModalCategorySelect'), editModalSaveBtn = document.getElementById('editModalSaveBtn'), editModalCancelBtn = document.getElementById('editModalCancelBtn');
   const editPantryModal = document.getElementById('editPantryModal'), editPantryNameInput = document.getElementById('editPantryNameInput'), editPantryQtyInput = document.getElementById('editPantryQtyInput'), editPantryMinQtyInput = document.getElementById('editPantryMinQtyInput'), editPantryCategorySelect = document.getElementById('editPantryCategorySelect'), editPantrySaveBtn = document.getElementById('editPantrySaveBtn'), editPantryCancelBtn = document.getElementById('editPantryCancelBtn');
@@ -526,6 +535,54 @@
   }
 
   addPantryBtn.addEventListener('click', addPantryItem);
+
+  // ===== הכנסת כל פריטי הקניות למלאי הבית =====
+  importAllShoppingToPantryBtn.addEventListener('click', async () => {
+    if (!currentItems.length) {
+      await showCustomConfirm("הודעה", "אין מוצרים ברשימת הקניות להעברה למלאי.", false);
+      return;
+    }
+
+    const isConfirmed = await showCustomConfirm(
+      "הכנסת כל המוצרים למלאי",
+      `האם להוסיף ${currentItems.length} מוצרים מרשימת הקניות למלאי הבית?`
+    );
+
+    if (isConfirmed) {
+      showLoading("מעביר את כל המוצרים למלאי...");
+      try {
+        const batch = writeBatch(db);
+
+        for (const item of currentItems) {
+          const docId = item.name.trim().toLowerCase().replace(/\s+/g, '_');
+          const pantryRef = doc(db, "households", householdId, "pantry", docId);
+          const pantrySnap = await getDoc(pantryRef);
+
+          const addedQty = parseFloat(item.qty) || 1;
+
+          if (pantrySnap.exists()) {
+            const curData = pantrySnap.data();
+            batch.update(pantryRef, { quantity: (curData.quantity || 0) + addedQty });
+          } else {
+            batch.set(pantryRef, {
+              name: item.name.trim(),
+              category: item.category || "כללי",
+              quantity: addedQty,
+              minQuantity: 1,
+              monthlyConsumption: 0
+            });
+          }
+        }
+
+        await batch.commit();
+        await showCustomConfirm("הצלחה", "כל הפריטים ממידע הקניות התווספו למלאי בהצלחה!", false);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        hideLoading();
+      }
+    }
+  });
 
   async function updatePantryQuantity(item, delta) {
     const newQty = Math.max(0, (item.quantity || 0) + delta);
@@ -696,6 +753,36 @@
       } finally {
         hideLoading();
       }
+    }
+  });
+
+  // ===== סימון או ביטול סימון של כל המוצרים ברשימה =====
+  toggleSelectAllBtn.addEventListener('click', async () => {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const selectedCategory = categoryFilterSelect.value;
+
+    const visibleItems = currentItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm);
+      const matchesCategory = selectedCategory === "ALL" || (item.category || "כללי") === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (!visibleItems.length) return;
+
+    // אם לפחות אחד לא מסומן – נסמן את הכל. אחרת – נבטל את הסימון של הכל.
+    const shouldCheckAll = visibleItems.some(i => !i.completed);
+
+    showLoading("מעדכן סימון פריטים...");
+    try {
+      const batch = writeBatch(db);
+      visibleItems.forEach(item => {
+        batch.update(doc(db, "activeList", item.id), { completed: shouldCheckAll });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      hideLoading();
     }
   });
 
