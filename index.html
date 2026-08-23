@@ -64,6 +64,13 @@
     li { background: #f9f9f9; border: 1px solid #eee; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; touch-action: none; user-select: none; transition: background-color 0.2s, box-shadow 0.2s; }
     li.checked { background: #e8f5e9; text-decoration: line-through; color: #777; }
     li.low-stock { border-right: 5px solid var(--accent); }
+    
+    /* סימון פריט בחוסר שיש להשלימו */
+    li.out-of-stock {
+      border-right: 5px solid var(--accent);
+      background-color: #fff3e0;
+    }
+    
     .checkbox { width: 20px; height: 20px; cursor: pointer; margin-left: 8px; }
     
     .item-right { display: flex; align-items: center; gap: 8px; }
@@ -580,13 +587,17 @@
         const ul = document.createElement('ul');
         grouped[cat].forEach(item => {
           const li = document.createElement('li');
+          
+          // בדיקה אם המוצר בחוסר (כשכמות במלאי קטנה או שווה לסף המינימום)
           const isLow = (item.quantity || 0) <= (item.minQuantity || 1);
-          if (isLow) li.classList.add('low-stock');
+          if (isLow) {
+            li.classList.add('out-of-stock');
+          }
 
           li.innerHTML = `
             <div class="item-right">
               <div class="item-details">
-                <strong>${item.name}</strong>
+                <strong>${isLow ? '🟠 ' : ''}${item.name}</strong>
                 <span class="item-qty">במלאי: ${item.quantity || 0} | מינימום: ${item.minQuantity || 1}</span>
                 <span class="item-consumption">נצרך החודש: ${item.monthlyConsumption || 0}</span>
               </div>
