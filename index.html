@@ -52,7 +52,7 @@
       display: flex;
       gap: 8px;
       margin-top: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     .filter-container select {
       flex: 1.2;
@@ -128,6 +128,7 @@
 
     .clear-btn { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); cursor: pointer; }
     .clear-btn:hover { background-color: #ffebee; }
+    .clear-btn:disabled { opacity: 0.5; cursor: not-allowed; background-color: transparent; }
     .hidden { display: none !important; }
 
     .share-code-box { background: #fff; padding: 6px; border: 1px dashed #ccc; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 5px 0; }
@@ -204,7 +205,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -267,11 +268,14 @@
       </div>
     </div>
 
+    <!-- כפתור לסימון / ביטול סימון המוצרים המוצגים -->
+    <button id="toggleSelectVisibleBtn" class="btn-secondary" style="font-size: 13px; margin-top: 0; margin-bottom: 15px; padding: 8px;">☑️ סמן / בטל הכל (לפריטים המוצגים)</button>
+
     <div id="shoppingListContainer"></div>
 
     <div class="action-btn-group">
       <button id="keepOnlyCheckedBtn" class="btn-primary" style="margin-top: 0;">🚀 יציאה לסופר (השאר רק מסומנים)</button>
-      <button id="clearCompletedBtn" class="clear-btn">🧹 סיים קנייה (מחק מסומנים)</button>
+      <button id="clearCompletedBtn" class="clear-btn" disabled>🧹 סיים קנייה (מחק מסומנים)</button>
     </div>
   </div>
 </div>
@@ -467,6 +471,7 @@
   const searchInput = document.getElementById('searchInput');
   const searchMicBtn = document.getElementById('searchMicBtn');
   const categoryFilterSelect = document.getElementById('categoryFilterSelect');
+  const toggleSelectVisibleBtn = document.getElementById('toggleSelectVisibleBtn');
 
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
@@ -540,6 +545,9 @@
       userNameDisplay.textContent = user.displayName || user.email;
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
+
+      // איפוס/נטרול כפתור "סיים קנייה" בכניסה לאפליקציה
+      clearCompletedBtn.disabled = true;
 
       await initHousehold();
       listenToGlobalCategories();
@@ -1156,19 +1164,25 @@
     });
   }
 
-  function renderListByCategories() {
-    shoppingListContainer.innerHTML = '';
+  function getVisibleItems() {
     const searchTerm = searchInput.value.trim().toLowerCase();
     const selectedCategory = categoryFilterSelect.value;
 
-    const filteredItems = currentItems.filter(item => {
+    return currentItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm);
       const itemCategory = item.category || "כללי";
       const matchesCategory = selectedCategory === "ALL" || itemCategory === selectedCategory;
       return matchesSearch && matchesCategory;
     });
+  }
+
+  function renderListByCategories() {
+    shoppingListContainer.innerHTML = '';
+    const filteredItems = getVisibleItems();
 
     if (filteredItems.length === 0) {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      const selectedCategory = categoryFilterSelect.value;
       shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchTerm || selectedCategory !== 'ALL' ? 'לא נמצאו מוצרים התואמים לסינון' : 'הרשימה ריקה'}</div>`;
       return;
     }
@@ -1223,6 +1237,29 @@
       }
     });
   }
+
+  // פונקציונליות כפתור "סמן / בטל הכל"
+  toggleSelectVisibleBtn.addEventListener('click', async () => {
+    const visibleItems = getVisibleItems();
+    if (visibleItems.length === 0) return;
+
+    // אם כל הפריטים המוצגים מסומנים כבר - נבטל את הסימון לכולם; אחרת - נסמן את כולם
+    const allChecked = visibleItems.every(i => i.completed);
+    const newStatus = !allChecked;
+
+    showLoading("מעדכן את סימון המוצרים...");
+    try {
+      const batch = writeBatch(db);
+      visibleItems.forEach(item => {
+        batch.update(doc(db, "activeList", item.id), { completed: newStatus });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      hideLoading();
+    }
+  });
 
   searchInput.addEventListener('input', () => {
     renderListByCategories();
@@ -1329,7 +1366,11 @@
           batch.update(doc(db, "activeList", item.id), { completed: false });
         });
 
-        batch.commit().catch(err => console.log("סנכרון לרשת ייעשה כשתתחבר מחדש:", err));
+        await batch.commit();
+
+        // הפעלת כפתור "סיים קנייה" לאחר יציאה לסופר
+        clearCompletedBtn.disabled = false;
+
       } catch (err) {
         console.error(err);
       } finally {
@@ -1339,6 +1380,8 @@
   });
 
   clearCompletedBtn.addEventListener('click', async () => {
+    if (clearCompletedBtn.disabled) return;
+
     const completed = currentItems.filter(i => i.completed);
     if (!completed.length) {
       await showCustomConfirm("הודעה", "אין מוצרים מסומנים למחיקה.", false);
@@ -1359,6 +1402,10 @@
         });
 
         await batch.commit();
+
+        // נטרול הכפתור מחדש לאחר סיום הקנייה
+        clearCompletedBtn.disabled = true;
+
       } catch (err) {
         console.error(err);
       } finally {
