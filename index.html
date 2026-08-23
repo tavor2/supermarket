@@ -658,6 +658,7 @@
 
       if (isFinal) {
         addItemRecognition.stop();
+        releaseMicButtons();
       }
     };
 
@@ -705,6 +706,7 @@
 
       if (isFinal) {
         searchRecognition.stop();
+        releaseMicButtons();
       }
     };
 
@@ -846,7 +848,6 @@
           await batch.commit();
         }
 
-        // ביטול אפשרות הלחיצה על "סיים קנייה" לאחר טעינת המאגר
         clearCompletedBtn.disabled = true;
 
         hideLoading();
@@ -1363,7 +1364,6 @@
 
         batch.commit().catch(err => console.log("סנכרון לרשת ייעשה כשתתחבר מחדש:", err));
 
-        // אפשור כפתור "סיים קנייה" בלבד בעת לחיצה על "יציאה לסופר"
         clearCompletedBtn.disabled = false;
 
       } catch (err) {
