@@ -52,7 +52,7 @@
       display: flex;
       gap: 8px;
       margin-top: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     .filter-container select {
       flex: 1.2;
@@ -88,6 +88,19 @@
       padding: 4px;
       width: auto;
       line-height: 1;
+    }
+
+    /* כפתור סימון/ביטול הכל */
+    .toggle-all-btn {
+      background-color: #e8f5e9;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      font-size: 13px;
+      font-weight: bold;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 15px;
     }
 
     .category-header {
@@ -204,7 +217,7 @@
       <div>קוד המשק בית הנוכחי שלך:</div>
       <div class="share-code-box" id="myHouseholdIdDisplay">...</div>
       
-      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה المשותפת</button>
+      <button id="migrateOldItemsBtn" class="btn-info" style="font-size: 13px; padding: 8px;">🔄 שייך את המוצרים הקיימים שלי לרשימה המשותפת</button>
 
       <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ddd;">
       <label style="font-size: 12px;">רוצה להתחבר לרשימה של בן/בת הזוג?</label>
@@ -266,6 +279,9 @@
         <button type="button" id="searchMicBtn" class="search-mic-btn" title="חיפוש קולי">🎙️</button>
       </div>
     </div>
+
+    <!-- כפתור סימון/ביטול הכל למוצרים המוצגים -->
+    <button id="toggleSelectAllVisibleBtn" class="toggle-all-btn">☑️/☐ סמן / בטל הכל (המוצגים)</button>
 
     <div id="shoppingListContainer"></div>
 
@@ -467,6 +483,7 @@
   const searchInput = document.getElementById('searchInput');
   const searchMicBtn = document.getElementById('searchMicBtn');
   const categoryFilterSelect = document.getElementById('categoryFilterSelect');
+  const toggleSelectAllVisibleBtn = document.getElementById('toggleSelectAllVisibleBtn');
 
   const shoppingListContainer = document.getElementById('shoppingListContainer');
   const keepOnlyCheckedBtn = document.getElementById('keepOnlyCheckedBtn');
@@ -865,7 +882,7 @@
     if (!currentUser || !householdId) return;
 
     try {
-      showLoading("משייך את המוצרים הקיימים לרשימה המשותפת...");
+      showLoading("משייך את המוצרים הקיימים לרשימה المשותפת...");
       const q = query(collection(db, "activeList"), where("userId", "==", currentUser.uid));
       const snapshot = await getDocs(q);
 
@@ -883,7 +900,7 @@
       await batch.commit();
 
       hideLoading();
-      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה המשותפת.`, false);
+      await showCustomConfirm("הצלחה", `בהצלחה! ${snapshot.size} מוצרים מהרשימה הקודמת שויכו והופיעו כעת ברשימה المשותפת.`, false);
       shareForm.classList.remove('active');
     } catch (err) {
       hideLoading();
@@ -1156,20 +1173,25 @@
     });
   }
 
-  function renderListByCategories() {
-    shoppingListContainer.innerHTML = '';
+  // פונקציה המחזירה את כל המוצרים שמוצגים כעת על הטרמינל (בהתאם לחיפוש וסינון הקטגוריה)
+  function getVisibleItems() {
     const searchTerm = searchInput.value.trim().toLowerCase();
     const selectedCategory = categoryFilterSelect.value;
 
-    const filteredItems = currentItems.filter(item => {
+    return currentItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm);
       const itemCategory = item.category || "כללי";
       const matchesCategory = selectedCategory === "ALL" || itemCategory === selectedCategory;
       return matchesSearch && matchesCategory;
     });
+  }
+
+  function renderListByCategories() {
+    shoppingListContainer.innerHTML = '';
+    const filteredItems = getVisibleItems();
 
     if (filteredItems.length === 0) {
-      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchTerm || selectedCategory !== 'ALL' ? 'לא נמצאו מוצרים התואמים לסינון' : 'הרשימה ריקה'}</div>`;
+      shoppingListContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">${searchInput.value.trim() || categoryFilterSelect.value !== 'ALL' ? 'לא נמצאו מוצרים התואמים לסינון' : 'הרשימה ריקה'}</div>`;
       return;
     }
 
@@ -1223,6 +1245,32 @@
       }
     });
   }
+
+  // אירוע לחיצה על כפתור סימון / ביטול הכל למוצרים המוצגים
+  toggleSelectAllVisibleBtn.addEventListener('click', async () => {
+    const visibleItems = getVisibleItems();
+    if (visibleItems.length === 0) return;
+
+    // אם קיים מוצר מוצג כלשהו שאיננו מסומן -> נסמן את כולם (true), אחרת -> נבטל לכולם (false)
+    const hasUnchecked = visibleItems.some(item => !item.completed);
+    const targetState = hasUnchecked;
+
+    showLoading(targetState ? "מסמן את כל המוצרים המוצגים..." : "מבטל סימון לכל המוצרים המוצגים...");
+
+    try {
+      const batch = writeBatch(db);
+      visibleItems.forEach(item => {
+        if (item.completed !== targetState) {
+          batch.update(doc(db, "activeList", item.id), { completed: targetState });
+        }
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error("שגיאה בעדכון גורף של המוצרים:", err);
+    } finally {
+      hideLoading();
+    }
+  });
 
   searchInput.addEventListener('input', () => {
     renderListByCategories();
