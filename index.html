@@ -692,16 +692,22 @@
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    // --- ההקלטה הקולית להוספת מוצר ---
+    const releaseMicButtons = () => {
+      micBtn.disabled = false; micBtn.style.opacity = '1'; micBtn.style.background = '#fff';
+      searchMicBtn.disabled = false; searchMicBtn.style.opacity = '1'; searchMicBtn.style.background = 'transparent';
+    };
+
+    itemInput.addEventListener('focus', releaseMicButtons);
+    searchInput.addEventListener('focus', releaseMicButtons);
+
     const addItemRecognition = new SpeechRecognition();
     addItemRecognition.lang = 'he-IL';
-    addItemRecognition.continuous = true;
+    addItemRecognition.continuous = false;
     addItemRecognition.interimResults = true;
 
     micBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      micBtn.disabled = true;
-      micBtn.style.background = '#ffebee';
+      micBtn.disabled = true; micBtn.style.background = '#ffebee';
       try { addItemRecognition.start(); } catch (err) { releaseMicButtons(); }
     });
 
@@ -710,45 +716,33 @@
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-
-      if (transcript.includes('סיים')) {
-        transcript = transcript.replace(/סיים/g, '').trim();
-      }
-
       itemInput.value = transcript;
       itemInput.dispatchEvent(new Event('input'));
+    };
+    addItemRecognition.onerror = releaseMicButtons;
+    addItemRecognition.onend = releaseMicButtons;
 
-      // עצירת ההקלטה מיד כשהטקסט מוזן לתיבה
-      if (transcript.length > 0) {
-        addItemRecognition.stop();
-        releaseMicButtons();
+    const searchRecognition = new SpeechRecognition();
+    searchRecognition.lang = 'he-IL';
+    searchRecognition.continuous = false;
+    searchRecognition.interimResults = true;
+
+    searchMicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      searchMicBtn.disabled = true; searchMicBtn.style.opacity = '0.5';
+      try { searchRecognition.start(); } catch (err) { releaseMicButtons(); }
+    });
+
+    searchRecognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
       }
+      searchInput.value = transcript;
+      searchInput.dispatchEvent(new Event('input'));
     };
-
-    addItemRecognition.onerror = () => { releaseMicButtons(); };
-    addItemRecognition.onend = () => { releaseMicButtons(); };
-
-    // פונקציית העזר לשחרור ואיפוס מצב כפתורי ההקלטה
-    const releaseMicButtons = () => {
-      micBtn.disabled = false;
-      micBtn.style.opacity = '1';
-      micBtn.style.background = '#fff';
-
-      searchMicBtn.disabled = false;
-      searchMicBtn.style.opacity = '1';
-      searchMicBtn.style.background = 'transparent';
-    };
-
-    // שחרור כפתורים בעת לחיצה או התמקדות בשדות הקלט
-    itemInput.addEventListener('focus', releaseMicButtons);
-    itemInput.addEventListener('click', releaseMicButtons);
-
-    searchInput.addEventListener('focus', releaseMicButtons);
-    searchInput.addEventListener('click', releaseMicButtons);
-
-    // טיפול בשחרור הכפתור בסיום או שגיאה של הזיהוי הקולי בחיפוש
-    searchRecognition.onerror = () => { releaseMicButtons(); };
-    searchRecognition.onend = () => { releaseMicButtons(); };
+    searchRecognition.onerror = releaseMicButtons;
+    searchRecognition.onend = releaseMicButtons;
   } else {
     micBtn.style.display = 'none';
     searchMicBtn.style.display = 'none';
