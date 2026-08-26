@@ -135,7 +135,7 @@
 
     /* חלונות מודאליים */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
+    .modal-box { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
     .modal-box h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--text); }
     .modal-actions { display: flex; gap: 8px; margin-top: 15px; }
     .modal-actions button { flex: 1; padding: 10px; font-weight: bold; cursor: pointer; }
@@ -143,6 +143,18 @@
 
     .cat-order-list { list-style: none; padding: 0; margin: 10px 0; }
     .cat-order-item { background: #f0f0f0; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* עיצוב עבור מודאל המלאי והטאבים */
+    .tabs-nav { display: flex; gap: 4px; border-bottom: 2px solid #e0e0e0; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 8px 4px; font-size: 12px; font-weight: bold; background: #f0f0f0; border: none; border-radius: 6px 6px 0 0; cursor: pointer; color: #555; }
+    .tab-btn.active { background: var(--primary); color: white; }
+    .inventory-add-form { display: flex; gap: 6px; margin-bottom: 15px; }
+    .inventory-add-form input[type="text"] { flex: 2; padding: 8px; font-size: 14px; }
+    .inventory-add-form input[type="number"] { flex: 1; padding: 8px; font-size: 14px; }
+    .inventory-add-form button { flex: 1; padding: 8px; font-size: 14px; margin: 0; }
+    .inventory-list-item { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; border: 1px solid #eee; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; }
+    .inventory-qty-control { display: flex; align-items: center; gap: 6px; }
+    .inventory-qty-control button { width: 28px; height: 28px; padding: 0; font-size: 14px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
 
     /* שעון חול / שכבת טעינה ברקע */
     .loading-overlay {
@@ -193,6 +205,9 @@
       <span>מחובר כ: <strong id="userNameDisplay"></strong></span>
       <button id="logoutBtn">התנתק</button>
     </div>
+
+    <!-- כפתור לפתיחת דף מלאי -->
+    <button id="openInventoryBtn" class="btn-primary" style="margin-bottom: 12px; background-color: #00796b;">📦 ניהול מלאי מוצרים</button>
 
     <!-- כפתורי מאגר מוצרים קבוע -->
     <div style="display: flex; gap: 8px; margin-bottom: 12px;">
@@ -276,6 +291,31 @@
     <div class="action-btn-group">
       <button id="keepOnlyCheckedBtn" class="btn-primary" style="margin-top: 0;">🚀 יציאה לסופר (השאר רק מסומנים)</button>
       <button id="clearCompletedBtn" class="clear-btn" disabled>🧹 סיים קנייה (מחק מסומנים)</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודאל ניהול מלאי -->
+<div id="inventoryModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>📦 ניהול מלאי מוצרים</h3>
+    
+    <div class="tabs-nav">
+      <button type="button" class="tab-btn active" data-tab="fridge_out">מקרר בחוץ</button>
+      <button type="button" class="tab-btn" data-tab="freezer_out">מקפיא בחוץ</button>
+      <button type="button" class="tab-btn" data-tab="fridge_home">מקרר בבית</button>
+    </div>
+
+    <div class="inventory-add-form">
+      <input type="text" id="invItemName" placeholder="שם המוצר...">
+      <input type="number" id="invItemQty" value="1" min="1" placeholder="כמות">
+      <button type="button" id="addInvItemBtn" class="btn-primary">הוסף</button>
+    </div>
+
+    <ul id="inventoryItemsList"></ul>
+
+    <div class="modal-actions">
+      <button id="closeInventoryBtn" class="btn-cancel">סגור</button>
     </div>
   </div>
 </div>
@@ -428,6 +468,11 @@
   let unsubscribeCategories = null;
   let activeEditingItem = null;
 
+  // ניהול מלאי variables
+  let currentTab = 'fridge_out';
+  let inventoryItems = [];
+  let unsubscribeInventory = null;
+
   // DOM elements
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
@@ -499,6 +544,16 @@
   const loadingOverlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
 
+  // DOM elementos למלאי
+  const openInventoryBtn = document.getElementById('openInventoryBtn');
+  const inventoryModal = document.getElementById('inventoryModal');
+  const closeInventoryBtn = document.getElementById('closeInventoryBtn');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const invItemName = document.getElementById('invItemName');
+  const invItemQty = document.getElementById('invItemQty');
+  const addInvItemBtn = document.getElementById('addInvItemBtn');
+  const inventoryItemsList = document.getElementById('inventoryItemsList');
+
   function showLoading(message) {
     loadingText.textContent = message;
     loadingOverlay.classList.remove('hidden');
@@ -546,7 +601,6 @@
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
 
-      // איפוס/נטרול כפתור "סיים קנייה" בכניסה לאפליקציה
       clearCompletedBtn.disabled = true;
 
       await initHousehold();
@@ -558,6 +612,7 @@
       householdId = null;
       if (unsubscribeShoppingList) unsubscribeShoppingList();
       if (unsubscribeCategories) unsubscribeCategories();
+      if (unsubscribeInventory) unsubscribeInventory();
       appSection.classList.add('hidden');
       loginSection.classList.remove('hidden');
     }
@@ -576,6 +631,104 @@
 
     myHouseholdIdDisplay.textContent = householdId;
   }
+
+  // לוגיקה עבור ניהול מלאי
+  openInventoryBtn.addEventListener('click', () => {
+    inventoryModal.classList.remove('hidden');
+    listenToInventory();
+  });
+
+  closeInventoryBtn.addEventListener('click', () => {
+    inventoryModal.classList.add('hidden');
+  });
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentTab = e.target.dataset.tab;
+      renderInventoryList();
+    });
+  });
+
+  function listenToInventory() {
+    if (unsubscribeInventory) unsubscribeInventory();
+    if (!householdId) return;
+
+    const q = query(collection(db, "households", householdId, "inventory"));
+    unsubscribeInventory = onSnapshot(q, (snapshot) => {
+      inventoryItems = [];
+      snapshot.forEach(docSnap => {
+        inventoryItems.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderInventoryList();
+    });
+  }
+
+  function renderInventoryList() {
+    inventoryItemsList.innerHTML = '';
+    const filtered = inventoryItems.filter(item => item.location === currentTab);
+
+    if (filtered.length === 0) {
+      inventoryItemsList.innerHTML = '<li style="text-align:center; color:#888; justify-content:center;">אין מוצרים במלאי זה</li>';
+      return;
+    }
+
+    filtered.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+
+    filtered.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'inventory-list-item';
+      li.innerHTML = `
+        <span>${item.name}</span>
+        <div class="inventory-qty-control">
+          <button type="button" class="btn-dec">-</button>
+          <span><strong>${item.qty}</strong></span>
+          <button type="button" class="btn-inc">+</button>
+          <button type="button" class="delete-btn" style="margin-right:8px;">🗑️</button>
+        </div>
+      `;
+
+      li.querySelector('.btn-dec').addEventListener('click', () => updateInventoryQty(item, -1));
+      li.querySelector('.btn-inc').addEventListener('click', () => updateInventoryQty(item, 1));
+      li.querySelector('.delete-btn').addEventListener('click', () => deleteDoc(doc(db, "households", householdId, "inventory", item.id)));
+
+      inventoryItemsList.appendChild(li);
+    });
+  }
+
+  async function updateInventoryQty(item, change) {
+    const newQty = item.qty + change;
+    if (newQty <= 0) {
+      await deleteDoc(doc(db, "households", householdId, "inventory", item.id));
+    } else {
+      await updateDoc(doc(db, "households", householdId, "inventory", item.id), { qty: newQty });
+    }
+  }
+
+  addInvItemBtn.addEventListener('click', async () => {
+    const name = invItemName.value.trim();
+    const qty = parseInt(invItemQty.value, 10) || 1;
+
+    if (!name || !householdId) return;
+
+    const existing = inventoryItems.find(i => i.location === currentTab && i.name.toLowerCase() === name.toLowerCase());
+
+    if (existing) {
+      await updateDoc(doc(db, "households", householdId, "inventory", existing.id), {
+        qty: existing.qty + qty
+      });
+    } else {
+      await addDoc(collection(db, "households", householdId, "inventory"), {
+        name: name,
+        qty: qty,
+        location: currentTab
+      });
+    }
+
+    invItemName.value = '';
+    invItemQty.value = '1';
+  });
 
   async function loadMasterCatalogSuggestions() {
     if (!householdId) return;
@@ -604,7 +757,7 @@
     }
   });
 
-  // זיהוי דיבור (Speech Recognition) להוספת מוצר ולחיפוש מוצר
+  // זיהוי דיבור (Speech Recognition)
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -1238,12 +1391,10 @@
     });
   }
 
-  // פונקציונליות כפתור "סמן / בטל הכל"
   toggleSelectVisibleBtn.addEventListener('click', async () => {
     const visibleItems = getVisibleItems();
     if (visibleItems.length === 0) return;
 
-    // אם כל הפריטים המוצגים מסומנים כבר - נבטל את הסימון לכולם; אחרת - נסמן את כולם
     const allChecked = visibleItems.every(i => i.completed);
     const newStatus = !allChecked;
 
@@ -1368,7 +1519,6 @@
 
         await batch.commit();
 
-        // הפעלת כפתור "סיים קנייה" לאחר יציאה לסופר
         clearCompletedBtn.disabled = false;
 
       } catch (err) {
@@ -1403,7 +1553,6 @@
 
         await batch.commit();
 
-        // נטרול הכפתור מחדש לאחר סיום הקנייה
         clearCompletedBtn.disabled = true;
 
       } catch (err) {
